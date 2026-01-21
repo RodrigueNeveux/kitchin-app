@@ -1,5 +1,5 @@
 {
-      "name": "Kitch'In Mobile App Design",
+      "name": "kitch'in-mobile-app-design",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
@@ -59,6 +59,22 @@
       },
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
-      }
+            "build": "vite build",
+            "build:analyze": "vite build && npx vite-bundle-visualizer",
+            "preview": "vite preview"
+      },
+      "description": "This is a code bundle for Kitch'In Mobile App Design. The original project is available at https://www.figma.com/design/g7seUeadTwQffBkDcdMxTY/Kitch-In-Mobile-App-Design.",
+      "main": "fix-imports.js",
+      "repository": {
+            "type": "git",
+            "url": "git+https://github.com/RodrigueNeveux/Kitchin.git"
+      },
+      "keywords": [],
+      "author": "",
+      "license": "ISC",
+      "type": "module",
+      "bugs": {
+            "url": "https://github.com/RodrigueNeveux/Kitchin/issues"
+      },
+      "homepage": "https://github.com/RodrigueNeveux/Kitchin#readme"
 }

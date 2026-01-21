@@ -1,20 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { HomeScreen } from './components/HomeScreen';
-import { InventoryScreen } from './components/InventoryScreen';
-import { ShoppingListScreen } from './components/ShoppingListScreen';
-import { AuthScreen } from './components/AuthScreen';
-import { ProfileScreen } from './components/ProfileScreen';
-import { SettingsScreen } from './components/SettingsScreen';
-import { AddProductScreen } from './components/AddProductScreen';
-import { RecipesScreen } from './components/RecipesScreen';
-import { RecipeDetailScreen } from './components/RecipeDetailScreen';
-import { NotificationsScreen } from './components/NotificationsScreen';
-import type { Recipe } from './components/RecipesScreen';
 import { BottomNav } from './components/BottomNav';
 import { supabase } from './utils/supabase/client';
 import { apiClient } from './utils/api';
 import { toast } from "sonner";
 import { demoProducts, demoShoppingList } from './utils/demoData';
+import type { Recipe } from './components/RecipesScreen';
+
+// Lazy loading des écrans pour réduire le bundle initial
+// Utilisation de .then() pour un meilleur tree-shaking et contrôle du chargement
+const InventoryScreen = lazy(() => 
+  import('./components/InventoryScreen').then(module => ({ default: module.InventoryScreen }))
+);
+const ShoppingListScreen = lazy(() => 
+  import('./components/ShoppingListScreen').then(module => ({ default: module.ShoppingListScreen }))
+);
+const AuthScreen = lazy(() => 
+  import('./components/AuthScreen').then(module => ({ default: module.AuthScreen }))
+);
+const ProfileScreen = lazy(() => 
+  import('./components/ProfileScreen').then(module => ({ default: module.ProfileScreen }))
+);
+const SettingsScreen = lazy(() => 
+  import('./components/SettingsScreen').then(module => ({ default: module.SettingsScreen }))
+);
+const AddProductScreen = lazy(() => 
+  import('./components/AddProductScreen').then(module => ({ default: module.AddProductScreen }))
+);
+// Les écrans de recettes sont regroupés car souvent utilisés ensemble
+const RecipesScreen = lazy(() => 
+  import('./components/RecipesScreen').then(module => ({ default: module.RecipesScreen }))
+);
+const RecipeDetailScreen = lazy(() => 
+  import('./components/RecipeDetailScreen').then(module => ({ default: module.RecipeDetailScreen }))
+);
+const NotificationsScreen = lazy(() => 
+  import('./components/NotificationsScreen').then(module => ({ default: module.NotificationsScreen }))
+);
+
+// Composant de chargement
+const LoadingScreen = () => (
+  <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="text-center">
+      <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-600 dark:text-gray-300">Chargement...</p>
+    </div>
+  </div>
+);
 
 interface Product {
   id: string;
@@ -41,7 +73,27 @@ interface ShoppingLists {
   pharmacy: ShoppingItem[];
 }
 
-export default function App() {
+// Fonction utilitaire pour éviter la duplication du code de filtrage
+const filterShoppingList = (items: typeof demoShoppingList, listId: string): ShoppingItem[] => {
+  return items
+    .filter(item => item.listId === listId || (!item.listId && listId === 'main'))
+    .map(item => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      checked: item.checked,
+      category: item.category,
+      listId: listId as 'main' | 'next-week' | 'pharmacy',
+    }));
+};
+
+const initializeShoppingLists = (): ShoppingLists => ({
+  main: filterShoppingList(demoShoppingList, 'main'),
+  'next-week': filterShoppingList(demoShoppingList, 'next-week'),
+  pharmacy: filterShoppingList(demoShoppingList, 'pharmacy'),
+});
+
+function AppContent() {
   const [activeScreen, setActiveScreen] = useState('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -49,32 +101,7 @@ export default function App() {
   const [household, setHousehold] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>(demoProducts);
-  const [shoppingLists, setShoppingLists] = useState<ShoppingLists>({
-    main: demoShoppingList.filter(item => !item.listId || item.listId === 'main').map(item => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      checked: item.checked,
-      category: item.category,
-      listId: 'main',
-    })),
-    'next-week': demoShoppingList.filter(item => item.listId === 'next-week').map(item => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      checked: item.checked,
-      category: item.category,
-      listId: 'next-week',
-    })),
-    pharmacy: demoShoppingList.filter(item => item.listId === 'pharmacy').map(item => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      checked: item.checked,
-      category: item.category,
-      listId: 'pharmacy',
-    })),
-  });
+  const [shoppingLists, setShoppingLists] = useState<ShoppingLists>(initializeShoppingLists);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [darkMode, setDarkMode] = useState(false);
 
@@ -119,35 +146,34 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
+  // Memoized calculation du nombre de produits périmés pour les notifications
+  const expiringCount = useMemo(() => 
+    products.filter(p => p.daysUntilExpiry !== undefined && p.daysUntilExpiry <= 3).length,
+    [products]
+  );
+
   // Notification for expiring products - separate effect
   useEffect(() => {
-    if (isAuthenticated && products.length > 0) {
-      // Vérifier les produits bientôt périmés et afficher une notification
-      const expiringCount = products.filter(
-        p => p.daysUntilExpiry !== undefined && p.daysUntilExpiry <= 3
-      ).length;
+    if (isAuthenticated && expiringCount > 0) {
+      const timer = setTimeout(() => {
+        toast.warning(
+          `${expiringCount} produit${expiringCount > 1 ? 's' : ''} à consommer rapidement !`,
+          {
+            duration: 5000,
+            position: 'top-center',
+            action: {
+              label: 'Voir',
+              onClick: () => setActiveScreen('notifications'),
+            },
+          }
+        );
+      }, 1500); // Délai pour laisser l'app se charger
       
-      if (expiringCount > 0) {
-        const timer = setTimeout(() => {
-          toast.warning(
-            `${expiringCount} produit${expiringCount > 1 ? 's' : ''} à consommer rapidement !`,
-            {
-              duration: 5000,
-              position: 'top-center',
-              action: {
-                label: 'Voir',
-                onClick: () => setActiveScreen('notifications'),
-              },
-            }
-          );
-        }, 1500); // Délai pour laisser l'app se charger
-        
-        return () => clearTimeout(timer);
-      }
+      return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, products.length]);
+  }, [isAuthenticated, expiringCount]);
 
-  const checkSession = async () => {
+  const checkSession = useCallback(async () => {
     try {
       // MODE DÉMO : Pas de session persistante, toujours déconnecté au démarrage
       console.log('Mode démo - pas de session persistante');
@@ -156,7 +182,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const loadUserData = async () => {
     try {
@@ -198,7 +224,7 @@ export default function App() {
     return diffDays;
   };
 
-  const handleAuth = async (email: string, password: string, name?: string, isSignup?: boolean) => {
+  const handleAuth = useCallback(async (email: string, password: string, name?: string, isSignup?: boolean) => {
     try {
       // MODE DÉMO : Connexion simplifiée sans serveur
       console.log('Mode démo - authentification locale');
@@ -228,46 +254,21 @@ export default function App() {
       console.error('Auth error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     // MODE DÉMO : Réinitialisation locale
     setIsAuthenticated(false);
     setUser(null);
     setHousehold(null);
     setMembers([]);
     setProducts(demoProducts);
-    setShoppingLists({
-      main: demoShoppingList.filter(item => !item.listId || item.listId === 'main').map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        checked: item.checked,
-        category: item.category,
-        listId: 'main',
-      })),
-      'next-week': demoShoppingList.filter(item => item.listId === 'next-week').map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        checked: item.checked,
-        category: item.category,
-        listId: 'next-week',
-      })),
-      pharmacy: demoShoppingList.filter(item => item.listId === 'pharmacy').map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        checked: item.checked,
-        category: item.category,
-        listId: 'pharmacy',
-      })),
-    });
+    setShoppingLists(initializeShoppingLists());
     setActiveScreen('home');
     toast.success('Déconnexion réussie');
-  };
+  }, []);
 
-  const handleCreateInvite = async (): Promise<string> => {
+  const handleCreateInvite = useCallback(async (): Promise<string> => {
     console.log('handleCreateInvite appelé dans App.tsx');
     try {
       // MODE DÉMO : Génération d'un code d'invitation fictif
@@ -285,9 +286,9 @@ export default function App() {
       toast.error('Erreur lors de la génération du code');
       throw error;
     }
-  };
+  }, []);
 
-  const handleJoinHousehold = async (code: string) => {
+  const handleJoinHousehold = useCallback(async (code: string) => {
     try {
       // MODE DÉMO : Fonctionnalité non disponible
       toast.info('Mode démo : Cette fonctionnalité nécessite un serveur', { duration: 3000 });
@@ -296,9 +297,9 @@ export default function App() {
       toast.error('Erreur lors de la jonction au foyer');
       throw error;
     }
-  };
+  }, []);
 
-  const handleRemoveMember = async (memberId: string) => {
+  const handleRemoveMember = useCallback(async (memberId: string) => {
     try {
       // MODE DÉMO : Fonctionnalité non disponible
       toast.info('Mode démo : Cette fonctionnalité nécessite un serveur', { duration: 3000 });
@@ -306,10 +307,10 @@ export default function App() {
       console.error('Error removing member:', error);
       throw error;
     }
-  };
+  }, []);
 
   // Product handlers
-  const handleUpdateQuantity = async (id: string, change: number) => {
+  const handleUpdateQuantity = useCallback(async (id: string, change: number) => {
     try {
       const product = products.find(p => p.id === id);
       if (!product) return;
@@ -323,9 +324,9 @@ export default function App() {
     } catch (error) {
       console.error('Error updating product quantity:', error);
     }
-  };
+  }, [products]);
 
-  const handleDeleteProduct = async (id: string) => {
+  const handleDeleteProduct = useCallback(async (id: string) => {
     try {
       // MODE DÉMO : Suppression locale uniquement
       setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -333,10 +334,10 @@ export default function App() {
     } catch (error) {
       console.error('Error deleting product:', error);
     }
-  };
+  }, []);
 
   // Shopping list handlers
-  const handleToggleItem = async (listId: string, id: string) => {
+  const handleToggleItem = useCallback(async (listId: string, id: string) => {
     try {
       // MODE DÉMO : Mise à jour locale uniquement
       setShoppingLists((prev) => ({
@@ -348,9 +349,9 @@ export default function App() {
     } catch (error) {
       console.error('Error toggling shopping item:', error);
     }
-  };
+  }, [shoppingLists]);
 
-  const handleDeleteItem = async (listId: string, id: string) => {
+  const handleDeleteItem = useCallback(async (listId: string, id: string) => {
     try {
       // MODE DÉMO : Suppression locale uniquement
       setShoppingLists((prev) => ({
@@ -361,9 +362,9 @@ export default function App() {
     } catch (error) {
       console.error('Error deleting shopping item:', error);
     }
-  };
+  }, [shoppingLists]);
 
-  const handleAddItem = async (listId: string, name: string, quantity: string) => {
+  const handleAddItem = useCallback(async (listId: string, name: string, quantity: string) => {
     try {
       // Détection automatique de la catégorie
       const detectCategory = (productName: string): string => {
@@ -406,9 +407,9 @@ export default function App() {
     } catch (error) {
       console.error('Error adding shopping item:', error);
     }
-  };
+  }, [shoppingLists]);
 
-  const handleMoveItem = async (itemId: string, fromListId: string, toListId: string) => {
+  const handleMoveItem = useCallback(async (itemId: string, fromListId: string, toListId: string) => {
     try {
       // Trouver l'article dans la liste source
       const item = shoppingLists[fromListId as keyof ShoppingLists].find(i => i.id === itemId);
@@ -425,9 +426,9 @@ export default function App() {
     } catch (error) {
       console.error('Error moving shopping item:', error);
     }
-  };
+  }, [shoppingLists]);
 
-  const handleAddProduct = async (productData: {
+  const handleAddProduct = useCallback(async (productData: {
     name: string;
     quantity: number;
     category: 'fridge' | 'pantry' | 'freezer';
@@ -460,9 +461,9 @@ export default function App() {
       toast.error('Erreur lors de l\'ajout du produit');
       throw error;
     }
-  };
+  }, []);
 
-  const handleUpdateHouseholdName = async (name: string) => {
+  const handleUpdateHouseholdName = useCallback(async (name: string) => {
     try {
       // MODE DÉMO : Mise à jour locale uniquement
       setHousehold((prev: any) => ({ ...prev, name }));
@@ -471,9 +472,9 @@ export default function App() {
       console.error('Error updating household name:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const handleUpdateEmail = async (email: string) => {
+  const handleUpdateEmail = useCallback(async (email: string) => {
     try {
       // MODE DÉMO : Mise à jour locale uniquement
       setUser((prev: any) => ({ ...prev, email }));
@@ -482,9 +483,9 @@ export default function App() {
       console.error('Error updating email:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const handleAddSampleIngredients = async () => {
+  const handleAddSampleIngredients = useCallback(async () => {
     const sampleIngredients = [
       // Frigo
       { name: 'Lait', quantity: 2, category: 'fridge' as const },
@@ -558,29 +559,31 @@ export default function App() {
       console.error('Error adding sample ingredients:', error);
       toast.error('Erreur lors de l\'ajout des ingrédients');
     }
-  };
+  }, [handleAddProduct]);
 
-  // Get expiring products (within 3 days)
-  const expiringProducts = products
-    .filter((p) => p.daysUntilExpiry !== undefined && p.daysUntilExpiry <= 3)
-    .slice(0, 4);
+  // Memoized calculations pour éviter les recalculs inutiles
+  const expiringProducts = useMemo(() => 
+    products
+      .filter((p) => p.daysUntilExpiry !== undefined && p.daysUntilExpiry <= 3)
+      .slice(0, 4),
+    [products]
+  );
 
-  // Get fridge products for home screen
-  const fridgeProducts = products.filter((p) => p.category === 'fridge').slice(0, 4);
+  const fridgeProducts = useMemo(() => 
+    products.filter((p) => p.category === 'fridge').slice(0, 4),
+    [products]
+  );
 
   if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!isAuthenticated) {
-    return <AuthScreen onAuth={handleAuth} />;
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <AuthScreen onAuth={handleAuth} />
+      </Suspense>
+    );
   }
 
   return (
@@ -606,74 +609,90 @@ export default function App() {
         />
       )}
       {activeScreen === 'notifications' && (
-        <NotificationsScreen
-          products={products}
-          onBack={() => setActiveScreen('home')}
-          onNavigateToInventory={() => setActiveScreen('inventory')}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <NotificationsScreen
+            products={products}
+            onBack={() => setActiveScreen('home')}
+            onNavigateToInventory={() => setActiveScreen('inventory')}
+          />
+        </Suspense>
       )}
       {activeScreen === 'inventory' && (
-        <InventoryScreen
-          products={products}
-          onBack={() => setActiveScreen('home')}
-          onUpdateQuantity={handleUpdateQuantity}
-          onDeleteProduct={handleDeleteProduct}
-          onAddProduct={() => setActiveScreen('add-product')}
-          onAddSampleIngredients={handleAddSampleIngredients}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <InventoryScreen
+            products={products}
+            onBack={() => setActiveScreen('home')}
+            onUpdateQuantity={handleUpdateQuantity}
+            onDeleteProduct={handleDeleteProduct}
+            onAddProduct={() => setActiveScreen('add-product')}
+            onAddSampleIngredients={handleAddSampleIngredients}
+          />
+        </Suspense>
       )}
       {activeScreen === 'add-product' && (
-        <AddProductScreen
-          onBack={() => setActiveScreen('inventory')}
-          onSave={handleAddProduct}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <AddProductScreen
+            onBack={() => setActiveScreen('inventory')}
+            onSave={handleAddProduct}
+          />
+        </Suspense>
       )}
       {activeScreen === 'lists' && (
-        <ShoppingListScreen
-          lists={shoppingLists}
-          onBack={() => setActiveScreen('home')}
-          onToggleItem={handleToggleItem}
-          onDeleteItem={handleDeleteItem}
-          onAddItem={handleAddItem}
-          onMoveItem={handleMoveItem}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <ShoppingListScreen
+            lists={shoppingLists}
+            onBack={() => setActiveScreen('home')}
+            onToggleItem={handleToggleItem}
+            onDeleteItem={handleDeleteItem}
+            onAddItem={handleAddItem}
+            onMoveItem={handleMoveItem}
+          />
+        </Suspense>
       )}
       {activeScreen === 'profile' && (
-        <ProfileScreen
-          user={user}
-          household={household}
-          members={members}
-          onBack={() => setActiveScreen('home')}
-          onLogout={handleLogout}
-          onCreateInvite={handleCreateInvite}
-          onJoinHousehold={handleJoinHousehold}
-          onRemoveMember={handleRemoveMember}
-          onSettingsClick={() => setActiveScreen('settings')}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <ProfileScreen
+            user={user}
+            household={household}
+            members={members}
+            onBack={() => setActiveScreen('home')}
+            onLogout={handleLogout}
+            onCreateInvite={handleCreateInvite}
+            onJoinHousehold={handleJoinHousehold}
+            onRemoveMember={handleRemoveMember}
+            onSettingsClick={() => setActiveScreen('settings')}
+          />
+        </Suspense>
       )}
       {activeScreen === 'settings' && (
-        <SettingsScreen
-          user={user}
-          household={household}
-          onBack={() => setActiveScreen('profile')}
-          onUpdateHouseholdName={handleUpdateHouseholdName}
-          onUpdateEmail={handleUpdateEmail}
-          darkMode={darkMode}
-          onToggleDarkMode={() => setDarkMode(!darkMode)}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <SettingsScreen
+            user={user}
+            household={household}
+            onBack={() => setActiveScreen('profile')}
+            onUpdateHouseholdName={handleUpdateHouseholdName}
+            onUpdateEmail={handleUpdateEmail}
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode(!darkMode)}
+          />
+        </Suspense>
       )}
       {activeScreen === 'recipes' && !selectedRecipe && (
-        <RecipesScreen
-          onRecipeClick={(recipe) => setSelectedRecipe(recipe)}
-          availableProducts={products}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <RecipesScreen
+            onRecipeClick={(recipe) => setSelectedRecipe(recipe)}
+            availableProducts={products}
+          />
+        </Suspense>
       )}
       {activeScreen === 'recipes' && selectedRecipe && (
-        <RecipeDetailScreen
-          recipe={selectedRecipe}
-          onBack={() => setSelectedRecipe(null)}
-          availableProducts={products}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <RecipeDetailScreen
+            recipe={selectedRecipe}
+            onBack={() => setSelectedRecipe(null)}
+            availableProducts={products}
+          />
+        </Suspense>
       )}
       {activeScreen !== 'add-product' && activeScreen !== 'profile' && activeScreen !== 'settings' && activeScreen !== 'notifications' && !selectedRecipe && (
         <BottomNav
@@ -682,9 +701,13 @@ export default function App() {
             setSelectedRecipe(null);
             setActiveScreen(screen);
           }}
-          notificationCount={expiringProducts.length}
+          notificationCount={expiringCount}
         />
       )}
     </div>
   );
+}
+
+export default function App() {
+  return <AppContent />;
 }

@@ -1,4 +1,4 @@
-import { ArrowLeft, Moon, Sun, Users, Mail, Edit2, Check } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Users, Mail, Edit2, Check, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { Switch } from './ui/switch';
 import { Input } from './ui/input';
@@ -24,6 +24,8 @@ export function SettingsScreen({
   darkMode,
   onToggleDarkMode,
 }: SettingsScreenProps) {
+  // L'application est uniquement en français — suppression du contexte de langue
+  // (les options de langue ont été retirées)
   const [isEditingHousehold, setIsEditingHousehold] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [householdName, setHouseholdName] = useState(household?.name || '');
@@ -99,31 +101,47 @@ export function SettingsScreen({
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
         <div className="max-w-md mx-auto space-y-6">
-          {/* Appearance Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
-            <h3 className="text-gray-900 dark:text-white mb-4">
-              Apparence
-            </h3>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {darkMode ? (
-                  <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                ) : (
-                  <Sun className="w-5 h-5 text-amber-600" />
-                )}
-                <div>
-                  <p className="text-gray-900 dark:text-white">
-                    Mode sombre
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {darkMode ? 'Activé' : 'Désactivé'}
-                  </p>
+          {/* Appearance and Language Section */}
+          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors space-y-6">
+            {/* Dark Mode */}
+            <div>
+                <h3 className="text-gray-900 dark:text-white mb-4">
+                Thème
+              </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {darkMode ? (
+                    <Moon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  ) : (
+                    <Sun className="w-5 h-5 text-amber-600" />
+                  )}
+                  <div>
+                    <p className="text-gray-900 dark:text-white">
+                      Sombre / Clair
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {darkMode ? 'Sombre' : 'Clair'}
+                    </p>
+                  </div>
                 </div>
+                <Switch
+                  checked={darkMode}
+                  onCheckedChange={onToggleDarkMode}
+                />
               </div>
-              <Switch
-                checked={darkMode}
-                onCheckedChange={onToggleDarkMode}
-              />
+            </div>
+
+            {/* Language Selection */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3 mb-4">
+                <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <h3 className="text-gray-900 dark:text-white">
+                  Langue
+                </h3>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                L'application est disponible uniquement en français.
+              </div>
             </div>
           </section>
 

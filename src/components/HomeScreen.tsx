@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { User, UserPlus, ChevronRight, Bell } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
@@ -21,7 +22,7 @@ interface HomeScreenProps {
   onNotificationsClick?: () => void;
 }
 
-export function HomeScreen({ 
+function HomeScreenComponent({ 
   expiringProducts, 
   fridgeProducts, 
   household,
@@ -161,9 +162,7 @@ export function HomeScreen({
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {product.daysUntilExpiry === 0
                             ? "Aujourd'hui"
-                            : `Dans ${product.daysUntilExpiry} jour${
-                                product.daysUntilExpiry > 1 ? 's' : ''
-                              }`}
+                            : `Dans ${product.daysUntilExpiry} jour${product.daysUntilExpiry > 1 ? 's' : ''}`}
                         </p>
                       )}
                     </div>
@@ -234,3 +233,6 @@ export function HomeScreen({
     </div>
   );
 }
+
+// Memoization pour éviter les re-renders inutiles
+export const HomeScreen = memo(HomeScreenComponent);

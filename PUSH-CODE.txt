@@ -1,0 +1,35 @@
+╔══════════════════════════════════════════════════════════════╗
+║        COMMANDES POUR PUSHER VOTRE CODE                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 EXÉCUTEZ CES COMMANDES DANS L'ORDRE :
+─────────────────────────────────────────────────────────────
+
+1. Supprimer l'ancien remote (si pas déjà fait) :
+   git remote remove origin
+
+2. Ajouter le nouveau remote :
+   git remote add origin https://github.com/RodrigueNeveux/Kitchin.git
+
+3. Vérifier que tous vos fichiers sont bien ajoutés :
+   git add .
+
+4. Faire un commit (si des fichiers n'ont pas été commités) :
+   git commit -m "Initial commit - Application Kitch'In complète"
+
+5. Pousser vers GitHub :
+   git push -u origin main
+
+╔══════════════════════════════════════════════════════════════╗
+║        VERSION RAPIDE (tout en une fois)                     ║
+╚══════════════════════════════════════════════════════════════╝
+
+git remote remove origin
+git remote add origin https://github.com/RodrigueNeveux/Kitchin.git
+git add .
+git commit -m "Initial commit - Application Kitch'In complète"
+git push -u origin main
+
+⚠️ Si GitHub demande un mot de passe :
+   Utilisez un Personal Access Token (pas votre mot de passe)
+   Voir : https://github.com/settings/tokens

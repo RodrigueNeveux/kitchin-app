@@ -1,10 +1,16 @@
 import { Clock, Users, ChefHat, CheckCircle2, Search, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { findRecipesByIngredients, isApiConfigured } from '../utils/spoonacularApi';
-import { frenchRecipes, translateRecipeTitle, translateCategory, translateIngredient } from '../utils/recipesData';
+import { translateRecipeTitle, translateCategory, translateIngredient } from '../utils/recipesData';
 import { translateText } from '../utils/translationApi';
 import { toast } from "sonner";
+
+// Lazy load des recettes françaises (chargement différé)
+const loadFrenchRecipes = async () => {
+  const { frenchRecipes } = await import('../utils/recipesData');
+  return frenchRecipes;
+};
 
 export interface Recipe {
   id: string;
@@ -36,11 +42,9 @@ interface RecipesScreenProps {
   availableProducts?: Product[];
 }
 
-// Importer les recettes françaises depuis le fichier dédié
-const DEMO_RECIPES: Recipe[] = frenchRecipes.slice(0, 8); // On garde 8 recettes pour la compatibilité
-
-// Toutes les recettes françaises disponibles
-const ALL_FRENCH_RECIPES: Recipe[] = frenchRecipes;
+// Variables pour stocker les recettes chargées (lazy loading)
+let cachedFrenchRecipes: Recipe[] | null = null;
+let loadingPromise: Promise<Recipe[]> | null = null;
 
 // Anciennes recettes de démo (conservées pour référence)
 const OLD_DEMO_RECIPES: Recipe[] = [
@@ -259,12 +263,29 @@ const OLD_DEMO_RECIPES: Recipe[] = [
   },
 ];
 
+// Fonction pour charger les recettes françaises de manière lazy
+async function getFrenchRecipes(): Promise<Recipe[]> {
+  if (cachedFrenchRecipes) {
+    return cachedFrenchRecipes;
+  }
+  
+  if (loadingPromise) {
+    return loadingPromise;
+  }
+  
+  loadingPromise = loadFrenchRecipes();
+  cachedFrenchRecipes = await loadingPromise;
+  loadingPromise = null;
+  
+  return cachedFrenchRecipes;
+}
+
 export function RecipesScreen({ onRecipeClick, availableProducts = [] }: RecipesScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [recipes, setRecipes] = useState<Recipe[]>(ALL_FRENCH_RECIPES);
-  const [loading, setLoading] = useState(false);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'can-make' | 'missing-few'>('all');
-  const [useInventory, setUseInventory] = useState(false);
+  const [useInventory, setUseInventory] = useState(true);
 
   // Vérifier si l'API est configurée
   const apiConfigured = isApiConfigured();
@@ -310,17 +331,41 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     } catch (error) {
       console.error('Erreur lors du chargement des recettes:', error);
       toast.error('Erreur lors du chargement des recettes');
-      setRecipes(ALL_FRENCH_RECIPES);
+      // Fallback sur les recettes françaises
+      const fallbackRecipes = await getFrenchRecipes();
+      setRecipes(fallbackRecipes);
     } finally {
       setLoading(false);
     }
   };
 
+  // Charger les recettes au montage du composant
+  useEffect(() => {
+    const loadInitialRecipes = async () => {
+      setLoading(true);
+      try {
+        if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
+          await loadRecipesFromInventory();
+        } else {
+          const frenchRecipes = await getFrenchRecipes();
+          setRecipes(frenchRecipes);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement initial:', error);
+        setLoading(false);
+      }
+    };
+    
+    loadInitialRecipes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
       loadRecipesFromInventory();
     } else if (!useInventory) {
-      setRecipes(ALL_FRENCH_RECIPES);
+      getFrenchRecipes().then(setRecipes);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useInventory, apiConfigured]);
@@ -410,108 +455,83 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-center text-gray-900 dark:text-white mb-4">
-            🍳 Recettes
-          </h1>
-
-          {/* Alerte API non configurée */}
-          {!apiConfigured && availableProducts.length > 0 && (
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 text-sm">
-                <p className="text-blue-900 dark:text-blue-100 font-medium mb-1">
-                  Mode recettes françaises 🇫🇷
-                </p>
-                <p className="text-blue-700 dark:text-blue-300 text-xs">
-                  {ALL_FRENCH_RECIPES.length} recettes traditionnelles françaises disponibles. Pour débloquer la recherche intelligente avec l'API Spoonacular (recettes traduites), configurez votre clé dans <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/40 rounded">utils/spoonacularApi.ts</code>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Search Bar */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher une recette..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-
-          {/* Toggle Inventory Search */}
-          {apiConfigured && availableProducts.length > 0 && (
-            <button
-              onClick={() => setUseInventory(!useInventory)}
-              disabled={loading}
-              className={`w-full mb-4 px-4 py-3 rounded-lg flex items-center justify-center gap-2 transition-all ${
-                useInventory
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Recherche en cours...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  <span>
-                    {useInventory
-                      ? `✓ Recettes avec mon inventaire (${inventoryIngredients.length} ingrédients)`
-                      : `Rechercher avec mon inventaire`}
-                  </span>
-                </>
-              )}
-            </button>
-          )}
-
-          {/* Filters */}
-          {availableProducts.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                  filter === 'all'
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                Toutes ({stats.total})
-              </button>
-              <button
-                onClick={() => setFilter('can-make')}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                  filter === 'can-make'
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                ✅ Je peux faire ({stats.canMake})
-              </button>
-              <button
-                onClick={() => setFilter('missing-few')}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                  filter === 'missing-few'
-                    ? 'bg-green-600 text-white shadow-md'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                ⚠️ Quelques ingrédients manquants ({stats.missingFew})
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Recipes Grid */}
+                  {/* Header */}
+                  <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm md:sticky md:top-0 md:z-10">
+                    <div className="max-w-4xl mx-auto">
+                      <h1 className="text-center text-gray-900 dark:text-white mb-4">
+                        🍳 Recettes
+                      </h1>
+            
+                      {/* Message de bienvenue */}
+                      {availableProducts.length > 0 && (
+                        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
+                          <Sparkles className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 text-sm">
+                            <p className="text-green-900 dark:text-green-100 font-medium mb-1">
+                              Mode recettes françaises
+                            </p>
+                            <p className="text-green-700 dark:text-green-300 text-xs">
+                              Recettes traditionnelles françaises disponibles
+                            </p>
+                          </div>
+                        </div>
+                      )}
+            
+                      {/* Search Bar */}
+                      <div className="relative mb-4">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Rechercher une recette..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+            
+                        {/* État de la recherche */}
+                        {apiConfigured && availableProducts.length > 0 && loading && (
+                          <div className="w-full mb-4 px-4 py-3 rounded-lg flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Recherche en cours...</span>
+                          </div>
+                        )}          {/* Filters */}
+                      {availableProducts.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          <button
+                            onClick={() => setFilter('all')}
+                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                              filter === 'all'
+                                ? 'bg-green-600 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            Toutes ({stats.total})
+                          </button>
+                          <button
+                            onClick={() => setFilter('can-make')}
+                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                              filter === 'can-make'
+                                ? 'bg-green-600 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            ✅ Je peux faire ({stats.canMake})
+                          </button>
+                          <button
+                            onClick={() => setFilter('missing-few')}
+                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                              filter === 'missing-few'
+                                ? 'bg-green-600 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            ⚠️ Quelques ingrédients manquants ({stats.missingFew})
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </header>      {/* Recipes Grid */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-24">
         <div className="max-w-4xl mx-auto">
           {loading ? (
@@ -522,9 +542,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
             <div className="text-center py-20">
               <ChefHat className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <p className="text-gray-500 dark:text-gray-400">
-                {searchQuery
-                  ? 'Aucune recette trouvée pour cette recherche'
-                  : 'Aucune recette disponible'}
+                Aucune recette trouvée
               </p>
             </div>
           ) : (
@@ -578,7 +596,7 @@ function RecipeCard({ recipe, onClick, showIngredientMatch }: RecipeCardProps) {
         
         {showIngredientMatch && missingFew && recipe.missedIngredientCount && (
           <div className="absolute top-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md">
-            {recipe.missedIngredientCount} ingrédient{recipe.missedIngredientCount > 1 ? 's' : ''} manquant{recipe.missedIngredientCount > 1 ? 's' : ''}
+            {recipe.missedIngredientCount} ingrédient(s) manquant(s)
           </div>
         )}
       </div>
@@ -610,11 +628,11 @@ function RecipeCard({ recipe, onClick, showIngredientMatch }: RecipeCardProps) {
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between text-xs">
               <span className="text-green-600 dark:text-green-400">
-                ✓ {recipe.usedIngredientCount} ingrédient{(recipe.usedIngredientCount || 0) > 1 ? 's' : ''} disponible{(recipe.usedIngredientCount || 0) > 1 ? 's' : ''}
+                ✓ {recipe.usedIngredientCount} ingrédient(s) disponible(s)
               </span>
               {(recipe.missedIngredientCount || 0) > 0 && (
                 <span className="text-orange-600 dark:text-orange-400">
-                  ✗ {recipe.missedIngredientCount} manquant{(recipe.missedIngredientCount || 0) > 1 ? 's' : ''}
+                  ✗ {recipe.missedIngredientCount} ingrédient(s) manquant(s)
                 </span>
               )}
             </div>

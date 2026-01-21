@@ -1,5 +1,5 @@
 import { ArrowLeft, Plus, Trash2, ShoppingCart, Check, X, Sparkles, MoveRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Checkbox } from './ui/checkbox';
 import {
   DropdownMenu,
@@ -143,6 +143,24 @@ export function ShoppingListScreen({
     }
   };
 
+  // Scroller vers le bas quand un nouvel article est ajouté
+  const listScrollRef = useRef<HTMLDivElement | null>(null);
+  const prevLengthRef = useRef<number>(currentItems.length);
+
+  useEffect(() => {
+    const prev = prevLengthRef.current;
+    const curr = currentItems.length;
+    if (curr > prev) {
+      // nouvel article ajouté -> scroller en bas
+      try {
+        listScrollRef.current?.scrollTo({ top: listScrollRef.current.scrollHeight, behavior: 'smooth' });
+      } catch (e) {
+        // ignore
+      }
+    }
+    prevLengthRef.current = curr;
+  }, [currentItems.length]);
+
   // Calculer le nombre total d'articles pour chaque liste
   const getListStats = (listId: keyof ShoppingLists) => {
     const items = lists[listId];
@@ -270,7 +288,7 @@ export function ShoppingListScreen({
       )}
 
       {/* Shopping Items List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 pb-64">
+      <div ref={listScrollRef} className="flex-1 overflow-y-auto px-6 py-4 pb-28 md:pb-0">
         <div className="max-w-md mx-auto space-y-6">
           {/* Unchecked Items - Grouped by Category */}
           {Object.entries(itemsByCategory).map(([categoryKey, categoryItems]) => (
@@ -391,8 +409,11 @@ export function ShoppingListScreen({
         </div>
       </div>
 
-      {/* Add Item Section */}
-      <div className="fixed bottom-20 left-0 right-0 bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shadow-lg z-40 transition-colors">
+      {/* Add Item Section - responsive: fixed bottom on small screens, inline on md+ */}
+      <div
+        className="fixed bottom-12 left-0 right-0 md:static md:bottom-auto bg-white dark:bg-gray-800 px-4 py-3 md:px-6 md:py-4 border-t md:border-t-0 border-gray-200 dark:border-gray-700 md:shadow-none shadow-lg z-40 transition-colors"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <div className="max-w-md mx-auto">
           <p className="text-sm mb-3 text-gray-600 dark:text-gray-300 flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -406,11 +427,8 @@ export function ShoppingListScreen({
               onChange={(e) => setNewItemName(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
               onFocus={() => setShowSuggestions(true)}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              style={{ 
-                fontSize: '16px',
-                minHeight: '48px'
-              } as React.CSSProperties}
+              className="flex-1 px-4 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              style={{ fontSize: '15px' } as React.CSSProperties}
             />
             <input
               type="text"
@@ -418,16 +436,13 @@ export function ShoppingListScreen({
               value={newItemQuantity}
               onChange={(e) => setNewItemQuantity(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-              className="w-20 px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-center text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              style={{ 
-                fontSize: '16px',
-                minHeight: '48px'
-              } as React.CSSProperties}
+              className="w-20 px-3 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-center text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              style={{ fontSize: '15px' } as React.CSSProperties}
             />
             <button
               onClick={() => handleAddItem()}
-              className="px-5 py-3 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-lg transition-colors flex items-center justify-center shadow-md hover:shadow-lg"
-              style={{ minHeight: '48px', minWidth: '48px' }}
+              className="px-4 py-2 md:px-5 md:py-3 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-lg transition-colors flex items-center justify-center shadow-md hover:shadow-lg"
+              style={{ minWidth: '48px' }}
             >
               <Plus className="w-6 h-6" />
             </button>

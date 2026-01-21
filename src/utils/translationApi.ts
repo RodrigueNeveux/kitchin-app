@@ -7,7 +7,65 @@
 import { convertUnits } from './translationHelpers';
 
 // Cache des traductions pour éviter les appels répétés
+// Utilise localStorage pour persister entre les sessions
 const translationCache = new Map<string, string>();
+const CACHE_KEY = 'kitchin-translations-cache';
+const MAX_CACHE_SIZE = 1000; // Limiter la taille du cache
+
+// Charger le cache depuis localStorage au démarrage
+function loadCacheFromStorage(): void {
+  try {
+    const stored = localStorage.getItem(CACHE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      Object.entries(parsed).forEach(([key, value]) => {
+        translationCache.set(key, value as string);
+      });
+      console.log(`📦 Cache de traduction chargé: ${translationCache.size} entrées`);
+    }
+  } catch (error) {
+    console.warn('⚠️ Erreur lors du chargement du cache:', error);
+  }
+}
+
+// Sauvegarder le cache dans localStorage
+function saveCacheToStorage(): void {
+  try {
+    // Limiter la taille du cache avant sauvegarde
+    if (translationCache.size > MAX_CACHE_SIZE) {
+      const entries = Array.from(translationCache.entries());
+      // Garder les entrées les plus récentes
+      const toKeep = entries.slice(-MAX_CACHE_SIZE);
+      translationCache.clear();
+      toKeep.forEach(([key, value]) => translationCache.set(key, value));
+    }
+    
+    const cacheObj = Object.fromEntries(translationCache);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObj));
+  } catch (error) {
+    // Si localStorage est plein ou indisponible, ignorer silencieusement
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      console.warn('⚠️ Cache localStorage plein, nettoyage...');
+      // Nettoyer les anciennes entrées
+      const entries = Array.from(translationCache.entries());
+      const toKeep = entries.slice(-Math.floor(MAX_CACHE_SIZE / 2));
+      translationCache.clear();
+      toKeep.forEach(([key, value]) => translationCache.set(key, value));
+      try {
+        const cacheObj = Object.fromEntries(translationCache);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObj));
+      } catch (e) {
+        // Si ça échoue encore, supprimer complètement
+        localStorage.removeItem(CACHE_KEY);
+      }
+    }
+  }
+}
+
+// Charger le cache au démarrage
+if (typeof window !== 'undefined') {
+  loadCacheFromStorage();
+}
 
 /**
  * Traduit un texte de l'anglais vers le français automatiquement
@@ -47,6 +105,11 @@ export async function translateText(text: string): Promise<string> {
       
       // Mettre en cache
       translationCache.set(cacheKey, translated);
+      // Sauvegarder dans localStorage de manière asynchrone (ne pas bloquer)
+      if (typeof window !== 'undefined') {
+        // Debounce pour éviter trop d'écritures
+        setTimeout(() => saveCacheToStorage(), 100);
+      }
       
       console.log(`✅ Traduit: "${text}" → "${translated}"`);
       return translated;
@@ -90,6 +153,9 @@ export async function translateTexts(texts: string[]): Promise<string[]> {
  */
 export function clearTranslationCache(): void {
   translationCache.clear();
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(CACHE_KEY);
+  }
   console.log('🗑️ Cache de traduction effacé');
 }
 

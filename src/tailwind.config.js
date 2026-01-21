@@ -3,7 +3,19 @@ export default {
   darkMode: ["class"],
   content: [
     './index.html',
-    './**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx,js,jsx}',
+    './src/components/**/*.{ts,tsx}',
+    './src/utils/**/*.{ts,tsx}',
+  ],
+  // Conserver les classes utilisées dynamiquement (pour les classes générées en JS)
+  safelist: [
+    'dark',
+    /^dark:/,
+    // Classes pour les animations
+    'animate-pulse',
+    'animate-spin',
+    // Classes pour les badges de notification
+    'bg-red-500',
   ],
   theme: {
     extend: {

@@ -1,5 +1,5 @@
 import { ArrowLeft, Bell, AlertTriangle, Clock, CheckCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Product {
   id: string;
@@ -28,7 +28,7 @@ interface NotificationsScreenProps {
 
 export function NotificationsScreen({ products, onBack, onNavigateToInventory }: NotificationsScreenProps) {
   // Générer les notifications basées sur les produits
-  const generateNotifications = (): Notification[] => {
+  const generateNotifications = (dismissed: string[] = []): Notification[] => {
     const notifications: Notification[] = [];
     
     products.forEach(product => {
@@ -67,14 +67,32 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
       }
     });
     
-    return notifications.sort((a, b) => {
+    const sorted = notifications.sort((a, b) => {
       // Tri par priorité : périmés > aujourd'hui > bientôt
       const priorityOrder = { expired: 0, expiring_soon: 1, low_stock: 2 };
       return priorityOrder[a.type] - priorityOrder[b.type];
     });
+    // Filtrer les notifications qui ont été supprimées par l'utilisateur
+    return sorted.filter(n => !dismissed.includes(n.id));
   };
 
-  const [notifications, setNotifications] = useState<Notification[]>(generateNotifications());
+  // Charger les notifications ignorées (IDs supprimés) depuis localStorage
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('dismissedNotifications');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [notifications, setNotifications] = useState<Notification[]>(() => generateNotifications(dismissedIds));
+
+  // Regénérer les notifications si les produits changent ou si la liste des dismissed change
+  useEffect(() => {
+    setNotifications(generateNotifications(dismissedIds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, dismissedIds]);
 
   const handleMarkAsRead = (id: string) => {
     setNotifications(prev =>
@@ -87,6 +105,17 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
   };
 
   const handleDeleteNotification = (id: string) => {
+    // Ajouter l'ID aux dismissedIds et le sauvegarder en localStorage
+    setDismissedIds(prev => {
+      const next = Array.from(new Set([...prev, id]));
+      try {
+        localStorage.setItem('dismissedNotifications', JSON.stringify(next));
+      } catch (e) {
+        console.error('Impossible de sauvegarder dismissedNotifications', e);
+      }
+      return next;
+    });
+    // Mettre à jour l'état local immédiatement
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
