@@ -1,23 +1,49 @@
 import { createRoot } from 'react-dom/client';
-import React from 'react'; // Ajout de l'import React
+import React from 'react';
 
-// 1. Importez l'application complète
+// Importez l'application complète
 import App from './App'; 
 
-// 2. Importez le Toaster (composant de notification)
+// Importez le Toaster (composant de notification)
 import { Toaster } from './components/ui/sonner'; 
 
-// CORRECTION DU CHEMIN CSS : Utilisation de l'alias '@/' pour une résolution fiable dans le build Vercel.
+// Importez ErrorBoundary pour capturer les erreurs
+import { ErrorBoundary } from './ErrorBoundary';
+
+// Importez le CSS
 import './index.css';
+
 const rootElement = document.getElementById('root');
 
-if (!rootElement) throw new Error('Failed to find the root element');
+if (!rootElement) {
+  throw new Error('Failed to find the root element');
+}
 
-// 3. Rendu de l'application complète et du Toaster
-// Ajout de React.StrictMode pour améliorer la compatibilité en production
-createRoot(rootElement).render(
-  <React.StrictMode>
-    <App />
-    <Toaster position="top-center" />
-  </React.StrictMode>
-);
+// Rendu de l'application avec ErrorBoundary pour capturer les erreurs
+try {
+  createRoot(rootElement).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <App />
+        <Toaster position="top-center" />
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+} catch (error) {
+  console.error('Error rendering app:', error);
+  rootElement.innerHTML = `
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: system-ui;">
+      <div style="text-align: center; max-width: 500px;">
+        <h1 style="font-size: 24px; margin-bottom: 16px;">⚠️ Erreur au chargement</h1>
+        <p style="margin-bottom: 24px; color: #666;">Une erreur est survenue lors du chargement de l'application.</p>
+        <button onclick="window.location.reload()" style="background: #16a34a; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;">
+          Rafraîchir la page
+        </button>
+        <details style="margin-top: 24px; text-align: left;">
+          <summary style="cursor: pointer; margin-bottom: 8px;">Détails techniques</summary>
+          <pre style="background: #f3f4f6; padding: 12px; border-radius: 4px; overflow: auto; font-size: 12px;">${error}</pre>
+        </details>
+      </div>
+    </div>
+  `;
+}

@@ -177,8 +177,12 @@ function AppContent() {
     try {
       // MODE DÉMO : Pas de session persistante, toujours déconnecté au démarrage
       console.log('Mode démo - pas de session persistante');
+      // Désactiver l'authentification pour le mode démo
+      setIsAuthenticated(false);
     } catch (error) {
       console.error('Session check error:', error);
+      // En cas d'erreur, continuer en mode démo
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
