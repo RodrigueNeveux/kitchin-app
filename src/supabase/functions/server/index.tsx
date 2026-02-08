@@ -6,20 +6,37 @@ import * as kv from "./kv_store.tsx";
 
 const app = new Hono();
 
-// Enable logger
-app.use('*', logger(console.log));
+// CRITICAL: CORS MUST be the FIRST middleware
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: "*", // Allow all origins
+  allowHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+  exposeHeaders: ["Content-Length", "Content-Type", "Authorization"],
+  maxAge: 86400, // 24 hours
+  credentials: false,
+};
 
-// Enable CORS for all routes and methods
-app.use(
-  "/*",
-  cors({
-    origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-  }),
-);
+// Enable CORS for all routes - FIRST middleware
+app.use("/*", cors(corsOptions));
+
+// Handle OPTIONS requests explicitly (preflight)
+app.options("*", (c) => {
+  return c.text("", 204);
+});
+
+// Add CORS headers manually to all responses as backup
+app.use("*", async (c, next) => {
+  await next();
+  // Ensure CORS headers are always present
+  c.header("Access-Control-Allow-Origin", "*");
+  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD");
+  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  c.header("Access-Control-Max-Age", "86400");
+});
+
+// Enable logger (after CORS)
+app.use('*', logger(console.log));
 
 // Create Supabase admin client for admin operations
 const supabaseAdmin = createClient(
@@ -120,10 +137,39 @@ app.post("/make-server-e298da7a/signup", async (c) => {
 
     await kv.set(`user:${userId}`, userProfile);
 
+    // Create a session for the new user (server-side, no CORS issues)
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+    );
+
+    // Sign in the user to get a session token
+    const { data: signInData, error: signInError } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError || !signInData.session) {
+      console.log('Error creating session after signup:', signInError);
+      // Return success anyway, user can login manually
+      return c.json({ 
+        success: true, 
+        user: { id: userId, email, name },
+        householdId,
+        message: 'Compte créé. Veuillez vous connecter.'
+      });
+    }
+
     return c.json({ 
       success: true, 
       user: { id: userId, email, name },
-      householdId 
+      householdId,
+      token: signInData.session.access_token,
+      access_token: signInData.session.access_token,
+      session: {
+        access_token: signInData.session.access_token,
+        user: signInData.user
+      }
     });
   } catch (error) {
     console.log('Unexpected error during signup:', error);
@@ -131,7 +177,69 @@ app.post("/make-server-e298da7a/signup", async (c) => {
   }
 });
 
-// Sign in
+// Login - Authenticate user and return session token
+app.post("/make-server-e298da7a/login", async (c) => {
+  try {
+    const { email, password } = await c.req.json();
+    
+    if (!email || !password) {
+      return c.json({ error: 'Email and password are required' }, 400);
+    }
+
+    // Create a Supabase client for authentication (using anon key)
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+    );
+
+    // Authenticate user using Supabase Auth (server-side, no CORS issues)
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.log('Login error:', error.message);
+      // Translate common errors to French
+      let errorMessage = error.message;
+      if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid credentials')) {
+        errorMessage = 'Email ou mot de passe incorrect';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Veuillez confirmer votre email avant de vous connecter';
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = 'Trop de tentatives. Veuillez réessayer dans quelques minutes';
+      }
+      return c.json({ error: errorMessage }, 401);
+    }
+
+    if (!data.session) {
+      return c.json({ error: 'Aucune session créée' }, 401);
+    }
+
+    // Get user profile
+    const userProfile = await kv.get(`user:${data.user.id}`);
+    
+    if (!userProfile) {
+      return c.json({ error: 'Profil utilisateur non trouvé' }, 404);
+    }
+
+    return c.json({ 
+      success: true,
+      token: data.session.access_token,
+      access_token: data.session.access_token,
+      session: {
+        access_token: data.session.access_token,
+        user: data.user
+      },
+      user: userProfile
+    });
+  } catch (error) {
+    console.log('Unexpected error during login:', error);
+    return c.json({ error: 'Erreur serveur lors de la connexion' }, 500);
+  }
+});
+
+// Sign in (legacy endpoint - kept for compatibility)
 app.post("/make-server-e298da7a/signin", async (c) => {
   try {
     const { email, password } = await c.req.json();

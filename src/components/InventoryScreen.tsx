@@ -61,7 +61,7 @@ export function InventoryScreen({
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -92,7 +92,7 @@ export function InventoryScreen({
       {/* Search Bar */}
       {showSearch && (
         <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md md:max-w-4xl mx-auto">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <input
@@ -118,7 +118,7 @@ export function InventoryScreen({
 
       {/* Category Filters */}
       <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors">
-        <div className="flex gap-2 max-w-md mx-auto overflow-x-auto">
+        <div className="flex gap-2 max-w-md md:max-w-4xl mx-auto overflow-x-auto">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -137,7 +137,7 @@ export function InventoryScreen({
 
       {/* Product List */}
       <div className="flex-1 overflow-y-auto px-6 py-4 pb-32">
-        <div className="max-w-md mx-auto space-y-3">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-3">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">

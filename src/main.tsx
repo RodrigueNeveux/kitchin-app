@@ -1,5 +1,7 @@
+// CRITIQUE : React DOIT être importé en premier pour garantir sa disponibilité
+// L'ordre des imports est important pour le bundling
+import * as React from 'react';
 import { createRoot } from 'react-dom/client';
-import React from 'react';
 
 // Importez l'application complète
 import App from './App'; 

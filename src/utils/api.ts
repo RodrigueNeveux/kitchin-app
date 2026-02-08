@@ -4,6 +4,36 @@ const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/server`;
 
 console.log('API Base URL configured as:', API_BASE_URL);
 
+// Fonction pour formater les messages d'erreur
+function formatErrorMessage(error: any, endpoint: string): string {
+  // Erreurs réseau
+  if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('network'))) {
+    return 'Erreur de connexion réseau. Vérifiez votre connexion internet et réessayez.';
+  }
+  
+  if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
+    return 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.';
+  }
+  
+  // Erreurs CORS
+      if (error.message?.includes('CORS') || error.message?.includes('cross-origin')) {
+        return 'L\'API Edge Function n\'est pas accessible. Vérifiez que la fonction est déployée sur Supabase.';
+      }
+  
+  // Erreurs de timeout
+  if (error.message?.includes('timeout') || error.name === 'TimeoutError') {
+    return 'La requête a pris trop de temps. Veuillez réessayer.';
+  }
+  
+  // Si c'est déjà un message d'erreur formaté, le retourner tel quel
+  if (error.message && typeof error.message === 'string' && error.message.length > 0) {
+    return error.message;
+  }
+  
+  // Message par défaut
+  return `Erreur lors de la connexion au serveur (${endpoint}). Veuillez réessayer.`;
+}
+
 export class ApiClient {
   private token: string | null = null;
 
@@ -43,6 +73,7 @@ export class ApiClient {
   private async request(endpoint: string, options: RequestInit = {}, retries = 2) {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...options.headers,
     };
 
@@ -60,21 +91,92 @@ export class ApiClient {
         const fullUrl = `${API_BASE_URL}${endpoint}`;
         console.log(`Requesting: ${fullUrl}`);
         
-        const response = await fetch(fullUrl, {
+        const fetchOptions: RequestInit = {
           ...options,
           headers,
-        });
+          mode: 'cors', // Explicitly enable CORS
+          credentials: 'omit', // Don't send credentials
+        };
+        
+        const response = await fetch(fullUrl, fetchOptions);
 
-        const data = await response.json();
+        // Vérifier si la réponse est OK avant de parser le JSON
+        let data: any;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            data = await response.json();
+          } catch (jsonError) {
+            // Si le JSON ne peut pas être parsé, créer un message d'erreur
+            const text = await response.text();
+            console.error(`Failed to parse JSON response:`, text);
+            throw new Error(`Erreur serveur: réponse invalide (${response.status})`);
+          }
+        } else {
+          // Si ce n'est pas du JSON, lire le texte
+          const text = await response.text();
+          data = { error: text || `Erreur serveur (${response.status})` };
+        }
 
         if (!response.ok) {
-          console.error(`API error on ${endpoint}:`, data.error);
-          throw new Error(data.error || 'API request failed');
+          // Gérer différents types d'erreurs
+          let errorMessage = 'Erreur lors de la requête';
+          
+          if (data.error) {
+            errorMessage = data.error;
+          } else if (data.message) {
+            errorMessage = data.message;
+          } else if (response.status === 401) {
+            errorMessage = 'Non autorisé. Veuillez vous reconnecter.';
+          } else if (response.status === 403) {
+            errorMessage = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
+          } else if (response.status === 404) {
+            errorMessage = 'Ressource non trouvée.';
+          } else if (response.status === 500) {
+            errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
+          } else if (response.status >= 400) {
+            errorMessage = `Erreur ${response.status}: ${data.error || 'Requête invalide'}`;
+          }
+          
+          console.error(`API error on ${endpoint}:`, {
+            status: response.status,
+            statusText: response.statusText,
+            error: data.error || data.message,
+            data
+          });
+          
+          throw new Error(errorMessage);
         }
 
         return data;
-      } catch (error) {
+      } catch (error: any) {
         lastError = error;
+        
+        // Détecter les erreurs réseau spécifiques
+        if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+          // Vérifier si c'est une erreur CORS
+          if (error.message.includes('CORS') || error.message.includes('cross-origin') || error.message.includes('Same Origin') || error.message.includes('multiorigine')) {
+            const corsError = new Error('Erreur CORS : L\'Edge Function Supabase n\'est peut-être pas déployée. Veuillez déployer l\'Edge Function "server" sur Supabase.');
+            corsError.name = 'CorsError';
+            lastError = corsError;
+          } else {
+            const networkError = new Error('Erreur de connexion réseau. Vérifiez votre connexion internet et réessayez.');
+            networkError.name = 'NetworkError';
+            lastError = networkError;
+          }
+        } else if (error.name === 'NetworkError' || error.message.includes('NetworkError')) {
+          // Vérifier si c'est une erreur CORS masquée
+          if (error.message.includes('CORS') || error.message.includes('cross-origin') || error.message.includes('Same Origin')) {
+            lastError = new Error('Erreur CORS : L\'Edge Function Supabase n\'est peut-être pas déployée. Veuillez déployer l\'Edge Function "server" sur Supabase.');
+          } else {
+            lastError = new Error('Erreur de connexion réseau. Vérifiez votre connexion internet et réessayez.');
+          }
+        } else if (error.message) {
+          // Garder le message d'erreur original s'il existe
+          lastError = error;
+        }
+        
         if (attempt < retries) {
           console.log(`Retrying ${endpoint} (attempt ${attempt + 1}/${retries})...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
@@ -82,9 +184,17 @@ export class ApiClient {
       }
     }
     
-    console.error(`Network error on ${endpoint} after ${retries + 1} attempts:`, lastError);
-    console.error(`Full URL was: ${API_BASE_URL}${endpoint}`);
-    throw lastError;
+    // Créer un message d'erreur final plus clair
+    const errorMessage = formatErrorMessage(lastError, endpoint);
+    const finalError = new Error(errorMessage);
+    
+    console.error(`Network error on ${endpoint} after ${retries + 1} attempts:`, {
+      error: lastError,
+      message: errorMessage,
+      url: `${API_BASE_URL}${endpoint}`
+    });
+    
+    throw finalError;
   }
 
   // Auth
@@ -92,6 +202,13 @@ export class ApiClient {
     return this.request('/make-server-e298da7a/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, name }),
+    });
+  }
+
+  async login(email: string, password: string) {
+    return this.request('/make-server-e298da7a/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
     });
   }
 

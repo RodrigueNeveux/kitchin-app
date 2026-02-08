@@ -38,7 +38,7 @@ function HomeScreenComponent({
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button 
             onClick={onNotificationsClick}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
@@ -62,7 +62,7 @@ function HomeScreenComponent({
 
       {/* Household Info Banner */}
       <div className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-900 dark:to-green-800 px-6 py-4 mx-4 mt-4 rounded-xl shadow-sm transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               Mon foyer
@@ -75,7 +75,6 @@ function HomeScreenComponent({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Bouton Ajouter (HomeScreen) cliqué');
               onInviteClick();
             }}
             className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-green-600 rounded-lg text-sm text-green-700 dark:text-white hover:bg-green-50 dark:hover:bg-green-700 transition-colors shadow-sm dark:shadow-md relative z-10 cursor-pointer active:scale-95 transform"
@@ -91,7 +90,7 @@ function HomeScreenComponent({
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-6 py-4 pb-32">
-        <div className="max-w-md mx-auto space-y-6">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* À Consommer Rapidement Section */}
           <section>
             <div className="flex items-center justify-between mb-3">

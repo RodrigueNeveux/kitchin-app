@@ -147,7 +147,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -171,7 +171,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
-        <div className="max-w-md mx-auto space-y-4">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-4">
           {/* Actions */}
           {notifications.length > 0 && unreadCount > 0 && (
             <div className="flex justify-end">

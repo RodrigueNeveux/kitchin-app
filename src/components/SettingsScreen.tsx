@@ -44,8 +44,7 @@ export function SettingsScreen({
         await onUpdateHouseholdName(householdName.trim());
         toast.success('Nom du foyer mis à jour');
       } else {
-        // Mode démo - mise à jour locale uniquement
-        toast.success('Nom du foyer mis à jour (mode démo)');
+        toast.success('Nom du foyer mis à jour');
       }
       setIsEditingHousehold(false);
     } catch (error: any) {
@@ -67,8 +66,7 @@ export function SettingsScreen({
         await onUpdateEmail(email.trim());
         toast.success('Email mis à jour');
       } else {
-        // Mode démo - mise à jour locale uniquement
-        toast.success('Email mis à jour (mode démo)');
+        toast.success('Email mis à jour');
       }
       setIsEditingEmail(false);
     } catch (error: any) {
@@ -84,7 +82,7 @@ export function SettingsScreen({
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -100,7 +98,7 @@ export function SettingsScreen({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
-        <div className="max-w-md mx-auto space-y-6">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* Appearance and Language Section */}
           <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors space-y-6">
             {/* Dark Mode */}
@@ -268,12 +266,6 @@ export function SettingsScreen({
               <div className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Version</span>
                 <span className="text-gray-900 dark:text-white">1.0.0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Mode</span>
-                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">
-                  Démo
-                </span>
               </div>
             </div>
           </section>

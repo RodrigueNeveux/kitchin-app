@@ -1,0 +1,31 @@
+╔══════════════════════════════════════════════════════════════╗
+║        REDÉPLOIEMENT - CORRECTIONS APPLIQUÉES                ║
+╚══════════════════════════════════════════════════════════════╝
+
+✅ CORRECTIONS APPORTÉES :
+─────────────────────────────────────────────────────────────
+1. React est maintenant dans le chunk principal (charge en premier)
+2. ErrorBoundary ajouté pour capturer les erreurs
+3. Gestion d'erreur améliorée
+
+📋 COMMANDES POUR REDÉPLOYER :
+─────────────────────────────────────────────────────────────
+
+1. Rebuild l'application :
+   npm run build
+
+2. Redéployer sur Vercel :
+   vercel --prod
+
+   OU si vous êtes déjà connecté :
+   vercel
+
+╔══════════════════════════════════════════════════════════════╗
+║        VERSION RAPIDE (tout en une fois)                     ║
+╚══════════════════════════════════════════════════════════════╝
+
+cd Kitchin
+npm run build
+vercel --prod
+
+Attendez 1-2 minutes, puis testez votre site !

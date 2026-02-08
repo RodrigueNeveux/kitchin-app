@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Users, ChefHat, CheckCircle2, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Users, ChefHat, CheckCircle2, Check, Loader2, ShoppingCart } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useMemo, useEffect } from 'react';
 import type { Recipe } from './RecipesScreen';
@@ -17,9 +17,11 @@ interface RecipeDetailScreenProps {
   recipe: Recipe;
   onBack: () => void;
   availableProducts?: Product[];
+  onAddMissingToShoppingList?: (items: { item: string; quantity: string }[]) => void;
+  darkMode?: boolean;
 }
 
-export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: RecipeDetailScreenProps) {
+export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onAddMissingToShoppingList, darkMode = false }: RecipeDetailScreenProps) {
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [detailedRecipe, setDetailedRecipe] = useState<RecipeDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,9 +38,9 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
         return;
       }
 
-      // Ne charger que si c'est une recette de l'API (ID numérique)
-      // Les recettes locales françaises ont des IDs comme 'fr-1', 'fr-2', etc.
-      if (isNaN(parseInt(recipe.id)) || recipe.id.startsWith('fr-')) {
+      // Ne charger que si c'est une recette Spoonacular (ID numérique)
+      // Les recettes françaises (fr-*) et TheMealDB (mealdb-*) ont déjà leurs données
+      if (isNaN(parseInt(recipe.id)) || recipe.id.startsWith('fr-') || recipe.id.startsWith('mealdb-')) {
         return;
       }
 
@@ -61,8 +63,9 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
   // Traduction automatique des étapes et ingrédients
   useEffect(() => {
     const autoTranslate = async () => {
-      // Ne traduire que si la traduction auto est activée et que c'est une recette API (non française)
-      if (!useAutoTranslation || recipe.id.startsWith('fr-')) {
+      // Ne traduire que pour les recettes Spoonacular (API en anglais)
+      // Les recettes fr-* et mealdb-* ont déjà leurs données (fr ou en)
+      if (!useAutoTranslation || recipe.id.startsWith('fr-') || recipe.id.startsWith('mealdb-')) {
         return;
       }
 
@@ -156,8 +159,8 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
       }));
     }
     
-    // Si c'est une recette locale française (ID commence par 'fr-'), pas besoin de traduire
-    if (recipe.id.startsWith('fr-')) {
+    // Recettes françaises ou TheMealDB : déjà formatées
+    if (recipe.id.startsWith('fr-') || recipe.id.startsWith('mealdb-')) {
       return recipe.ingredients;
     }
     
@@ -179,8 +182,8 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
       return detailedRecipe.analyzedInstructions[0].steps.map(s => translateStep(s.step));
     }
     
-    // Si c'est une recette locale française (ID commence par 'fr-'), pas besoin de traduire
-    if (recipe.id.startsWith('fr-')) {
+    // Recettes françaises ou TheMealDB : déjà formatées
+    if (recipe.id.startsWith('fr-') || recipe.id.startsWith('mealdb-')) {
       return recipe.steps;
     }
     
@@ -207,6 +210,11 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
     });
   }, [ingredients, availableProducts]);
 
+  const missingIngredients = useMemo(() => 
+    ingredientsWithAvailability.filter(i => !i.isAvailable).map(i => ({ item: i.item, quantity: i.quantity })),
+    [ingredientsWithAvailability]
+  );
+
   const getDifficultyColor = (difficulty: Recipe['difficulty']) => {
     switch (difficulty) {
       case 'Facile':
@@ -219,7 +227,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className={`flex flex-col h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header Image */}
       <div className="relative h-64 flex-shrink-0">
         <ImageWithFallback
@@ -229,14 +237,14 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
         />
         <button
           onClick={onBack}
-          className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+          className={`absolute top-4 left-4 p-2 rounded-full shadow-lg transition-colors ${darkMode ? 'bg-gray-800/90 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
         >
-          <ArrowLeft className="w-6 h-6 text-gray-600" />
+          <ArrowLeft className={`w-6 h-6 ${darkMode ? 'text-gray-200' : 'text-gray-600'}`} />
         </button>
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4">
+          <div className={`${darkMode ? 'bg-gray-900/95' : 'bg-white/95'} backdrop-blur-sm rounded-2xl p-4`}>
             <div className="flex items-start justify-between mb-2">
-              <h1 className="text-gray-900 flex-1" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
+              <h1 className={`flex-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 {recipe.name}
               </h1>
               <span
@@ -247,24 +255,18 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
                 {recipe.difficulty}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className={`flex items-center gap-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
-                <span style={{ color: '#4b5563', WebkitTextFillColor: '#4b5563' }}>
-                  {recipe.prepTime + recipe.cookTime} min
-                </span>
+                <span>{recipe.prepTime + recipe.cookTime} min</span>
               </div>
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                <span style={{ color: '#4b5563', WebkitTextFillColor: '#4b5563' }}>
-                  {recipe.servings} pers.
-                </span>
+                <span>{recipe.servings} pers.</span>
               </div>
               <div className="flex items-center gap-1">
                 <ChefHat className="w-4 h-4" />
-                <span style={{ color: '#4b5563', WebkitTextFillColor: '#4b5563' }}>
-                  {recipe.category}
-                </span>
+                <span>{recipe.category}</span>
               </div>
             </div>
           </div>
@@ -273,36 +275,41 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-4 pb-6">
-        <div className="max-w-md mx-auto space-y-6 pb-4">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-6 pb-4">
+          {/* Bouton Ajouter les ingrédients manquants */}
+          {missingIngredients.length > 0 && onAddMissingToShoppingList && (
+            <button
+              onClick={() => {
+                onAddMissingToShoppingList(missingIngredients);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors font-medium"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              Ajouter {missingIngredients.length} ingrédient{missingIngredients.length > 1 ? 's' : ''} manquant{missingIngredients.length > 1 ? 's' : ''} à la liste
+            </button>
+          )}
+
           {/* Time Details */}
-          <div className="bg-white rounded-2xl p-4">
-            <h2 className="text-gray-900 mb-3" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
+          <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h2 className={`mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Temps de préparation
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600" style={{ color: '#4b5563', WebkitTextFillColor: '#4b5563' }}>
-                  Préparation
-                </p>
-                <p className="text-gray-900" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
-                  {recipe.prepTime} min
-                </p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Préparation</p>
+                <p className={darkMode ? 'text-white' : 'text-gray-900'}>{recipe.prepTime} min</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600" style={{ color: '#4b5563', WebkitTextFillColor: '#4b5563' }}>
-                  Cuisson
-                </p>
-                <p className="text-gray-900" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
-                  {recipe.cookTime} min
-                </p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cuisson</p>
+                <p className={darkMode ? 'text-white' : 'text-gray-900'}>{recipe.cookTime} min</p>
               </div>
             </div>
           </div>
 
           {/* Ingredients */}
-          <div className="bg-white rounded-2xl p-4">
+          <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-gray-900" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
+              <h2 className={darkMode ? 'text-white' : 'text-gray-900'}>
                 Ingrédients
               </h2>
               {translating && (
@@ -317,25 +324,17 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
                   {ingredient.isAvailable ? (
                     <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                   ) : (
-                    <span className="text-gray-400 mt-1 flex-shrink-0">•</span>
+                    <span className={`mt-1 flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
                   )}
                   <div className="flex-1">
-                    <span 
-                      className={ingredient.isAvailable ? 'text-gray-900' : 'text-gray-600'}
-                      style={{ 
-                        color: ingredient.isAvailable ? '#111827' : '#4b5563', 
-                        WebkitTextFillColor: ingredient.isAvailable ? '#111827' : '#4b5563' 
-                      }}
-                    >
+                    <span className={ingredient.isAvailable ? (darkMode ? 'text-white' : 'text-gray-900') : (darkMode ? 'text-gray-300' : 'text-gray-600')}>
                       {ingredient.item}
                     </span>
-                    <span className="text-gray-500 ml-2" style={{ color: '#6b7280', WebkitTextFillColor: '#6b7280' }}>
+                    <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       - {ingredient.quantity}
                     </span>
                     {ingredient.isAvailable && (
-                      <span className="ml-2 text-xs text-green-600" style={{ color: '#16a34a', WebkitTextFillColor: '#16a34a' }}>
-                        (en stock)
-                      </span>
+                      <span className="ml-2 text-xs text-green-500">(en stock)</span>
                     )}
                   </div>
                 </li>
@@ -344,9 +343,9 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
           </div>
 
           {/* Steps */}
-          <div className="bg-white rounded-2xl p-4">
+          <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-gray-900" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
+              <h2 className={darkMode ? 'text-white' : 'text-gray-900'}>
                 Étapes de préparation
               </h2>
               {translating && (
@@ -361,7 +360,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
                 <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
               </div>
             ) : steps.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
+              <p className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Aucune étape disponible pour cette recette.
               </p>
             ) : (
@@ -377,13 +376,13 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
                         className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                           checkedSteps.has(index)
                             ? 'bg-green-600'
-                            : 'bg-gray-200'
+                            : darkMode ? 'bg-gray-600' : 'bg-gray-200'
                         }`}
                       >
                         {checkedSteps.has(index) ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
-                          <span className="text-gray-600 text-sm" style={{ color: '#4b5563', WebkitTextFillColor: '#4b5563' }}>
+                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                             {index + 1}
                           </span>
                         )}
@@ -391,14 +390,9 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [] }: R
                       <p
                         className={`flex-1 transition-opacity ${
                           checkedSteps.has(index)
-                            ? 'text-gray-400 line-through'
-                            : 'text-gray-700'
+                            ? 'text-gray-500 line-through'
+                            : darkMode ? 'text-gray-300' : 'text-gray-700'
                         }`}
-                        style={
-                          checkedSteps.has(index)
-                            ? { color: '#9ca3af', WebkitTextFillColor: '#9ca3af' }
-                            : { color: '#374151', WebkitTextFillColor: '#374151' }
-                        }
                       >
                         {step}
                       </p>

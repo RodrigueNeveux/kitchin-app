@@ -169,10 +169,10 @@ export function ShoppingListScreen({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors pb-16 md:pb-0">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -207,7 +207,7 @@ export function ShoppingListScreen({
       {/* Progress Bar */}
       {totalItems > 0 && (
         <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md md:max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">
                 Progression
@@ -228,7 +228,7 @@ export function ShoppingListScreen({
 
       {/* List Tabs */}
       <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors">
-        <div className="flex gap-2 max-w-md mx-auto overflow-x-auto">
+        <div className="flex gap-2 max-w-md md:max-w-4xl mx-auto overflow-x-auto">
           {listConfigs.map((list) => {
             const stats = getListStats(list.id);
             return (
@@ -267,7 +267,7 @@ export function ShoppingListScreen({
       {/* Quick Add Suggestions */}
       {showSuggestions && (
         <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 px-6 py-4 border-b border-green-200 dark:border-green-800">
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md md:max-w-4xl mx-auto">
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-green-600" />
               Suggestions rapides
@@ -288,8 +288,8 @@ export function ShoppingListScreen({
       )}
 
       {/* Shopping Items List */}
-      <div ref={listScrollRef} className="flex-1 overflow-y-auto px-6 py-4 pb-28 md:pb-0">
-        <div className="max-w-md mx-auto space-y-6">
+      <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* Unchecked Items - Grouped by Category */}
           {Object.entries(itemsByCategory).map(([categoryKey, categoryItems]) => (
             <div key={categoryKey} className="space-y-2">
@@ -409,43 +409,46 @@ export function ShoppingListScreen({
         </div>
       </div>
 
-      {/* Add Item Section - responsive: fixed bottom on small screens, inline on md+ */}
+      {/* Add Item Section - fixé en bas sur mobile, intégré sur desktop */}
       <div
-        className="fixed bottom-12 left-0 right-0 md:static md:bottom-auto bg-white dark:bg-gray-800 px-4 py-3 md:px-6 md:py-4 border-t md:border-t-0 border-gray-200 dark:border-gray-700 md:shadow-none shadow-lg z-40 transition-colors"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="flex-shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_12px_rgba(0,0,0,0.25)] sm:shadow-none transition-colors"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
       >
-        <div className="max-w-md mx-auto">
-          <p className="text-sm mb-3 text-gray-600 dark:text-gray-300 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
+        <div className="max-w-md md:max-w-4xl mx-auto px-4 sm:px-6 py-4">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <Plus className="w-4 h-4 text-green-600 dark:text-green-400" />
             Ajouter un article
           </p>
-          <div className="flex gap-3">
+          {/* Mobile : champs empilés pour plus de confort tactile */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               placeholder="Nom du produit"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
               onFocus={() => setShowSuggestions(true)}
-              className="flex-1 px-4 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              style={{ fontSize: '15px' } as React.CSSProperties}
+              className="flex-1 min-w-0 px-4 py-3 sm:py-2.5 text-base sm:text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
-            <input
-              type="text"
-              placeholder="Qté"
-              value={newItemQuantity}
-              onChange={(e) => setNewItemQuantity(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-              className="w-20 px-3 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-center text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              style={{ fontSize: '15px' } as React.CSSProperties}
-            />
-            <button
-              onClick={() => handleAddItem()}
-              className="px-4 py-2 md:px-5 md:py-3 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-lg transition-colors flex items-center justify-center shadow-md hover:shadow-lg"
-              style={{ minWidth: '48px' }}
-            >
-              <Plus className="w-6 h-6" />
-            </button>
+            <div className="flex gap-2 sm:gap-3">
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Qté"
+                value={newItemQuantity}
+                onChange={(e) => setNewItemQuantity(e.target.value.replace(/[^0-9]/g, ''))}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+                className="w-16 sm:w-20 px-3 py-3 sm:py-2.5 text-base sm:text-sm text-center border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
+              />
+              <button
+                onClick={() => handleAddItem()}
+                className="flex-1 sm:flex-none px-5 py-3 sm:py-2.5 min-h-[44px] min-w-[44px] bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                aria-label="Ajouter l'article"
+              >
+                <Plus className="w-5 h-5 sm:w-5 sm:h-5" />
+                <span className="sm:hidden">Ajouter</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -113,25 +113,35 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white px-6 py-4 shadow-sm flex-shrink-0">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+      {/* Header - Affiche le produit scanné ou le titre */}
+      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto gap-3">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
+            <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
-          <h1 className="text-gray-900" style={{ color: '#111827', WebkitTextFillColor: '#111827' }}>
-            Ajouter un produit
-          </h1>
-          <div className="w-10" /> {/* Spacer */}
+          {productImage ? (
+            <div className="flex-1 flex items-center justify-center min-w-0">
+              <img
+                src={productImage}
+                alt={name || 'Produit scanné'}
+                className="h-14 w-14 rounded-xl object-cover shadow-sm"
+              />
+            </div>
+          ) : (
+            <h1 className="flex-1 text-center text-gray-900 dark:text-white">
+              Ajouter un produit
+            </h1>
+          )}
+          <div className="w-10 flex-shrink-0" /> {/* Spacer pour équilibrer */}
         </div>
       </header>
 
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
-        <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-6 pb-6">
+        <form onSubmit={handleSubmit} className="max-w-md md:max-w-4xl mx-auto space-y-6 pb-6">
           {/* Scanner Button */}
           <button
             type="button"
@@ -142,22 +152,26 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
             Scanner un code-barres
           </button>
 
-          {/* Product Image */}
-          <div className="flex flex-col items-center">
-            <div className="w-32 h-32 bg-gray-100 rounded-2xl flex items-center justify-center mb-3 overflow-hidden">
-              {productImage ? (
-                <img src={productImage} alt={name} className="w-full h-full object-cover" />
-              ) : (
+          {/* Bouton exemple - produit réel d'Open Food Facts (Nutella) */}
+          <button
+            type="button"
+            onClick={() => handleBarcodeScanned('3017620422003')}
+            className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-600"
+          >
+            Voir un exemple de produit scanné
+          </button>
+
+          {/* Product Image - affiché uniquement si pas encore scanné (le produit est dans le header) */}
+          {!productImage && (
+            <div className="flex flex-col items-center">
+              <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center overflow-hidden">
                 <Camera className="w-12 h-12 text-gray-400" />
-              )}
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                Scannez ou entrez manuellement
+              </p>
             </div>
-            <button
-              type="button"
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              Ajouter une photo
-            </button>
-          </div>
+          )}
 
           {/* Product Name */}
           <div className="space-y-2">

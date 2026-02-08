@@ -1,0 +1,33 @@
+╔══════════════════════════════════════════════════════════════╗
+║        CONNEXION VERCEL - ÉTAPE SIMPLE                       ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 PROBLÈME : Token non valide
+─────────────────────────────────────────────────────────────
+Vous devez vous connecter à Vercel.
+
+📋 SOLUTION - EXÉCUTEZ CETTE COMMANDE :
+─────────────────────────────────────────────────────────────
+
+vercel login
+
+📋 CE QUI VA SE PASSER :
+─────────────────────────────────────────────────────────────
+1. Vercel va ouvrir votre navigateur automatiquement
+2. Connectez-vous avec votre compte Vercel (ou GitHub)
+3. Autorisez l'accès
+4. Le terminal confirmera : "Success! Authentication complete"
+
+📋 ENSUITE, DÉPLOYEZ :
+─────────────────────────────────────────────────────────────
+
+vercel
+
+╔══════════════════════════════════════════════════════════════╗
+║         COMMANDES COMPLÈTES (dans l'ordre)                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+1. vercel login        → Se connecter
+2. vercel              → Déployer
+
+C'est tout ! 🚀

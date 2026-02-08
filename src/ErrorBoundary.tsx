@@ -1,3 +1,4 @@
+// IMPORTANT : React doit être importé en premier
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {

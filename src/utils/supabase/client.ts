@@ -1,29 +1,23 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from './info';
 
-// Valeurs par défaut pour le mode démo si les clés ne sont pas définies
-const defaultProjectId = 'demo';
-const defaultAnonKey = 'demo-key';
+const supabaseUrl = `https://${projectId}.supabase.co`;
 
-const supabaseUrl = `https://${projectId || defaultProjectId}.supabase.co`;
-
-// Gérer le cas où les clés ne sont pas définies (mode démo)
-let supabaseInstance;
-try {
-  supabaseInstance = createSupabaseClient(
-    supabaseUrl, 
-    publicAnonKey || defaultAnonKey
-  );
-} catch (error) {
-  console.warn('Supabase initialization error (mode démo):', error);
-  // Créer un client factice pour le mode démo
-  supabaseInstance = createSupabaseClient(
-    'https://demo.supabase.co',
-    'demo-key'
-  );
-}
-
-export const supabase = supabaseInstance;
+// Configuration du client Supabase avec options pour améliorer la compatibilité CORS
+export const supabase = createSupabaseClient(supabaseUrl, publicAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    // Configuration pour améliorer la compatibilité CORS
+    flowType: 'pkce', // Utilise PKCE pour une meilleure sécurité et compatibilité
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'kitchin-web',
+    },
+  },
+});
 
 export function createClient() {
   return supabase;

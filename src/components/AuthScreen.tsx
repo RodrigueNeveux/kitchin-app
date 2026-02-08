@@ -1,17 +1,41 @@
 import { useState } from 'react';
-import { LogIn, Zap } from 'lucide-react';
+import { LogIn, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 interface AuthScreenProps {
   onAuth: (email: string, password: string, name?: string, isSignup?: boolean) => Promise<void>;
+  onForgotPassword?: (email: string) => Promise<void>;
 }
 
-export function AuthScreen({ onAuth }: AuthScreenProps) {
+export function AuthScreen({ onAuth, onForgotPassword }: AuthScreenProps) {
   const [isSignup, setIsSignup] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setForgotSuccess(false);
+    if (!onForgotPassword) return;
+    if (!email || !email.includes('@')) {
+      setError('Veuillez entrer une adresse email valide');
+      return;
+    }
+    setLoading(true);
+    try {
+      await onForgotPassword(email);
+      setForgotSuccess(true);
+    } catch (err: any) {
+      setError(err.message || 'Une erreur est survenue');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,39 +43,104 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
     setLoading(true);
 
     try {
+      // Validation basique côté client
+      if (!email || !email.includes('@')) {
+        setError('Veuillez entrer une adresse email valide');
+        setLoading(false);
+        return;
+      }
+      
+      if (!password) {
+        setError('Veuillez entrer votre mot de passe');
+        setLoading(false);
+        return;
+      }
+      
+      if (isSignup && (!name || name.trim().length === 0)) {
+        setError('Veuillez entrer votre nom complet');
+        setLoading(false);
+        return;
+      }
+      
       await onAuth(email, password, name, isSignup);
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue');
+      // Afficher le message d'erreur détaillé
+      const errorMessage = err.message || 'Une erreur est survenue';
+      setError(errorMessage);
+      console.error('Auth error in AuthScreen:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoMode = async () => {
-    setError('');
-    setLoading(true);
 
-    try {
-      await onAuth('demo@kitchin.app', 'demo123', 'Utilisateur Démo', false);
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Écran "Mot de passe oublié"
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-6">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <button
+              onClick={() => { setShowForgotPassword(false); setError(''); setForgotSuccess(false); }}
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Retour
+            </button>
+            <h2 className="text-gray-800 dark:text-white text-center mb-2">Mot de passe oublié</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-6">
+              Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+            </p>
+            {forgotSuccess ? (
+              <div className="bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg text-sm text-center">
+                Un email a été envoyé à <strong>{email}</strong>. Vérifiez votre boîte de réception (et les spams).
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
+                    placeholder="email@exemple.com"
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Envoi en cours...' : 'Envoyer le lien'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-6">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-green-700 mb-2">Kitch'In</h1>
-          <p className="text-gray-600">Gérez votre cuisine en famille</p>
+          <h1 className="text-green-700 dark:text-green-400 mb-2">Kitch'In</h1>
+          <p className="text-gray-600 dark:text-gray-400">Gérez votre cuisine en famille</p>
         </div>
 
         {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-gray-800 text-center mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+          <h2 className="text-gray-800 dark:text-white text-center mb-6">
             {isSignup ? 'Créer un compte' : 'Se connecter'}
           </h2>
 
@@ -90,24 +179,45 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1" style={{ color: '#374151', WebkitTextFillColor: '#374151' }}>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">
                 Mot de passe
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-900 placeholder:text-gray-400"
-                placeholder="••••••••"
-                style={{ WebkitTextFillColor: '#111827', color: '#111827' }}
-                autoComplete="current-password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm" style={{ color: '#dc2626', WebkitTextFillColor: '#dc2626' }}>
-                {error}
+              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm space-y-2" style={{ color: '#dc2626', WebkitTextFillColor: '#dc2626' }}>
+                <p>{error}</p>
+                {error.includes('CORS') && (
+                  <div className="mt-2 pt-2 border-t border-red-200">
+                    <p className="text-xs font-semibold mb-1">Solution :</p>
+                    <ol className="text-xs list-decimal list-inside space-y-1">
+                      <li>Allez sur <a href="https://supabase.com/dashboard/project/bguatwhgsgduclyacxqz/auth/url-configuration" target="_blank" rel="noopener noreferrer" className="underline">Supabase Dashboard</a></li>
+                      <li>Dans <strong>Site URL</strong>, ajoutez votre URL Vercel</li>
+                      <li>Dans <strong>Redirect URLs</strong>, ajoutez <code className="bg-red-100 px-1 rounded">https://*.vercel.app/**</code></li>
+                      <li>Sauvegardez et réessayez</li>
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
 
@@ -125,39 +235,25 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
                 : 'Se connecter'}
             </button>
 
-            {/* Divider */}
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500" style={{ color: '#6b7280', WebkitTextFillColor: '#6b7280' }}>
-                  ou
-                </span>
-              </div>
-            </div>
-
-            {/* Demo Mode Button */}
-            <button
-              type="button"
-              onClick={handleDemoMode}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white py-3 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
-            >
-              <Zap className="w-5 h-5" />
-              <span>Accès rapide - Mode Démo</span>
-            </button>
           </form>
 
           <div className="mt-6 text-center space-y-3">
+            {!isSignup && onForgotPassword && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="block w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-2"
+              >
+                Mot de passe oublié ?
+              </button>
+            )}
             <button
+              type="button"
               onClick={() => {
                 setIsSignup(!isSignup);
                 setError('');
               }}
-              className="text-sm text-blue-600 hover:text-blue-700"
-              style={{ color: '#2563eb', WebkitTextFillColor: '#2563eb' }}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
             >
               {isSignup
                 ? 'Déjà un compte ? Se connecter'

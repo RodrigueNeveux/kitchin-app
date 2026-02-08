@@ -1,8 +1,8 @@
 import { Clock, Users, ChefHat, CheckCircle2, Search, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { findRecipesByIngredients, isApiConfigured } from '../utils/spoonacularApi';
-import { translateRecipeTitle, translateCategory, translateIngredient } from '../utils/recipesData';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { findRecipesByIngredients, searchRecipes, isApiConfigured } from '../utils/spoonacularApi';
+import { searchMealDbRecipes, getRandomMealDbRecipes } from '../utils/mealDbApi';
 import { translateText } from '../utils/translationApi';
 import { toast } from "sonner";
 
@@ -46,222 +46,6 @@ interface RecipesScreenProps {
 let cachedFrenchRecipes: Recipe[] | null = null;
 let loadingPromise: Promise<Recipe[]> | null = null;
 
-// Anciennes recettes de démo (conservées pour référence)
-const OLD_DEMO_RECIPES: Recipe[] = [
-  {
-    id: '1',
-    name: 'Pâtes Carbonara',
-    image: 'https://images.unsplash.com/photo-1588013273468-315fd88ea34c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXN0YSUyMGNhcmJvbmFyYXxlbnwxfHx8fDE3NjA4OTc2NDd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 10,
-    cookTime: 15,
-    servings: 4,
-    difficulty: 'Facile',
-    category: 'Plat principal',
-    usedIngredientCount: 4,
-    missedIngredientCount: 2,
-    ingredients: [
-      { item: 'Spaghetti', quantity: '400g' },
-      { item: 'Lardons', quantity: '200g' },
-      { item: 'Œufs', quantity: '4' },
-      { item: 'Parmesan', quantity: '100g' },
-      { item: 'Poivre', quantity: 'Au goût' },
-    ],
-    steps: [
-      'Faire cuire les pâtes dans de l\'eau salée bouillante.',
-      'Faire revenir les lardons dans une poêle.',
-      'Battre les œufs avec le parmesan.',
-      'Mélanger les pâtes chaudes avec les lardons et les œufs.',
-      'Servir immédiatement avec du poivre fraîchement moulu.',
-    ],
-  },
-  {
-    id: '2',
-    name: 'Poulet au Curry',
-    image: 'https://images.unsplash.com/photo-1707448829764-9474458021ed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGlja2VuJTIwY3VycnklMjByaWNlfGVufDF8fHx8MTc2MDkyNTUzMnww&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 15,
-    cookTime: 30,
-    servings: 6,
-    difficulty: 'Moyen',
-    category: 'Plat principal',
-    usedIngredientCount: 5,
-    missedIngredientCount: 3,
-    ingredients: [
-      { item: 'Filets de poulet', quantity: '600g' },
-      { item: 'Oignon', quantity: '2' },
-      { item: 'Curry en poudre', quantity: '2 c. à soupe' },
-      { item: 'Lait de coco', quantity: '400ml' },
-      { item: 'Riz basmati', quantity: '300g' },
-      { item: 'Tomates', quantity: '2' },
-    ],
-    steps: [
-      'Couper le poulet en morceaux.',
-      'Faire revenir les oignons et le poulet.',
-      'Ajouter le curry et le lait de coco.',
-      'Ajouter les tomates coupées en dés.',
-      'Laisser mijoter 25 minutes.',
-      'Servir avec du riz basmati.',
-    ],
-  },
-  {
-    id: '3',
-    name: 'Salade César',
-    image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYWVzYXIlMjBzYWxhZHxlbnwxfHx8fDE3NjA5MjU1MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 15,
-    cookTime: 0,
-    servings: 2,
-    difficulty: 'Facile',
-    category: 'Entrée',
-    usedIngredientCount: 3,
-    missedIngredientCount: 2,
-    ingredients: [
-      { item: 'Laitue romaine', quantity: '1' },
-      { item: 'Poulet grillé', quantity: '200g' },
-      { item: 'Parmesan', quantity: '50g' },
-      { item: 'Croûtons', quantity: '100g' },
-      { item: 'Sauce César', quantity: '100ml' },
-    ],
-    steps: [
-      'Laver et couper la salade.',
-      'Couper le poulet en lanières.',
-      'Mélanger tous les ingrédients.',
-      'Ajouter la sauce César.',
-      'Servir immédiatement.',
-    ],
-  },
-  {
-    id: '4',
-    name: 'Saumon grillé au citron',
-    image: 'https://images.unsplash.com/photo-1580959375944-c1be86f036a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmlsbGVkJTIwc2FsbW9ufGVufDF8fHx8MTc2MDkyNTUzMnww&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 10,
-    cookTime: 15,
-    servings: 2,
-    difficulty: 'Facile',
-    category: 'Plat principal',
-    usedIngredientCount: 2,
-    missedIngredientCount: 2,
-    ingredients: [
-      { item: 'Filets de saumon', quantity: '2' },
-      { item: 'Citron', quantity: '1' },
-      { item: 'Huile d\'olive', quantity: '2 c. à soupe' },
-      { item: 'Sel et poivre', quantity: 'Au goût' },
-    ],
-    steps: [
-      'Préchauffer le grill du four.',
-      'Badigeonner le saumon d\'huile d\'olive.',
-      'Assaisonner de sel et poivre.',
-      'Griller 12-15 minutes.',
-      'Servir avec des quartiers de citron.',
-    ],
-  },
-  {
-    id: '5',
-    name: 'Omelette aux champignons',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbWVsZXR0ZXxlbnwxfHx8fDE3NjA5MjU1MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 5,
-    cookTime: 10,
-    servings: 2,
-    difficulty: 'Facile',
-    category: 'Plat principal',
-    usedIngredientCount: 3,
-    missedIngredientCount: 1,
-    ingredients: [
-      { item: 'Œufs', quantity: '6' },
-      { item: 'Champignons', quantity: '200g' },
-      { item: 'Fromage', quantity: '50g' },
-      { item: 'Beurre', quantity: '20g' },
-      { item: 'Sel et poivre', quantity: 'Au goût' },
-    ],
-    steps: [
-      'Faire revenir les champignons dans du beurre.',
-      'Battre les œufs avec sel et poivre.',
-      'Verser les œufs dans la poêle.',
-      'Ajouter le fromage râpé.',
-      'Plier l\'omelette et servir chaud.',
-    ],
-  },
-  {
-    id: '6',
-    name: 'Soupe de tomates maison',
-    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b21hdG8lMjBzb3VwfGVufDF8fHx8MTc2MDkyNTUzMnww&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 10,
-    cookTime: 25,
-    servings: 4,
-    difficulty: 'Facile',
-    category: 'Soupe',
-    usedIngredientCount: 4,
-    missedIngredientCount: 1,
-    ingredients: [
-      { item: 'Tomates', quantity: '1kg' },
-      { item: 'Oignon', quantity: '1' },
-      { item: 'Ail', quantity: '2 gousses' },
-      { item: 'Huile d\'olive', quantity: '2 c. à soupe' },
-      { item: 'Bouillon de légumes', quantity: '500ml' },
-    ],
-    steps: [
-      'Faire revenir l\'oignon et l\'ail dans l\'huile.',
-      'Ajouter les tomates coupées en morceaux.',
-      'Verser le bouillon de légumes.',
-      'Laisser mijoter 20 minutes.',
-      'Mixer et servir chaud.',
-    ],
-  },
-  {
-    id: '7',
-    name: 'Risotto aux champignons',
-    image: 'https://images.unsplash.com/photo-1476124369491-b79715f3ed87?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaXNvdHRvfGVufDF8fHx8MTc2MDkyNTUzMnww&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 10,
-    cookTime: 30,
-    servings: 4,
-    difficulty: 'Moyen',
-    category: 'Plat principal',
-    usedIngredientCount: 3,
-    missedIngredientCount: 2,
-    ingredients: [
-      { item: 'Riz arborio', quantity: '300g' },
-      { item: 'Champignons', quantity: '300g' },
-      { item: 'Oignon', quantity: '1' },
-      { item: 'Vin blanc', quantity: '100ml' },
-      { item: 'Bouillon', quantity: '1L' },
-      { item: 'Parmesan', quantity: '80g' },
-      { item: 'Beurre', quantity: '30g' },
-    ],
-    steps: [
-      'Faire revenir l\'oignon haché dans le beurre.',
-      'Ajouter les champignons coupés.',
-      'Incorporer le riz et mélanger.',
-      'Ajouter le vin blanc et laisser évaporer.',
-      'Ajouter le bouillon louche par louche en remuant.',
-      'Incorporer le parmesan et servir.',
-    ],
-  },
-  {
-    id: '8',
-    name: 'Tarte aux pommes',
-    image: 'https://images.unsplash.com/photo-1535920527002-b35e96722eb9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcHBsZSUyMHBpZXxlbnwxfHx8fDE3NjA5MjU1MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    prepTime: 20,
-    cookTime: 40,
-    servings: 6,
-    difficulty: 'Moyen',
-    category: 'Dessert',
-    usedIngredientCount: 2,
-    missedIngredientCount: 3,
-    ingredients: [
-      { item: 'Pâte brisée', quantity: '1' },
-      { item: 'Pommes', quantity: '5' },
-      { item: 'Sucre', quantity: '80g' },
-      { item: 'Beurre', quantity: '30g' },
-      { item: 'Cannelle', quantity: '1 c. à café' },
-    ],
-    steps: [
-      'Préchauffer le four à 180°C.',
-      'Étaler la pâte dans un moule.',
-      'Éplucher et couper les pommes en tranches.',
-      'Disposer les pommes sur la pâte.',
-      'Saupoudrer de sucre et de cannelle.',
-      'Enfourner 40 minutes.',
-    ],
-  },
-];
 
 // Fonction pour charger les recettes françaises de manière lazy
 async function getFrenchRecipes(): Promise<Recipe[]> {
@@ -280,14 +64,17 @@ async function getFrenchRecipes(): Promise<Recipe[]> {
   return cachedFrenchRecipes;
 }
 
+const RECIPE_CATEGORIES = ['Toutes', 'Plat principal', 'Entrée', 'Accompagnement', 'Dessert', 'Soupe', 'Salade'] as const;
+
 export function RecipesScreen({ onRecipeClick, availableProducts = [] }: RecipesScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'can-make' | 'missing-few'>('all');
   const [useInventory, setUseInventory] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<string>('Toutes');
 
-  // Vérifier si l'API est configurée
   const apiConfigured = isApiConfigured();
 
   // Convertir les produits en liste d'ingrédients pour l'API
@@ -326,6 +113,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
       }));
 
       setRecipes(convertedRecipes);
+      setBaseRecipes(convertedRecipes);
       console.log(`✅ ${convertedRecipes.length} recettes traduites et chargées`);
       toast.success(`${convertedRecipes.length} recettes trouvées !`);
     } catch (error) {
@@ -339,7 +127,19 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     }
   };
 
-  // Charger les recettes au montage du composant
+  // Charger recettes complètes : françaises + TheMealDB (gratuit, +300 recettes)
+  const loadCompleteRecipes = async (): Promise<Recipe[]> => {
+    const [french, mealDb] = await Promise.all([
+      getFrenchRecipes(),
+      getRandomMealDbRecipes(10),
+    ]);
+    const mealDbAsRecipe: Recipe[] = mealDb.map(r => ({ ...r }));
+    const seen = new Set(french.map(r => r.id));
+    const unique = mealDbAsRecipe.filter(r => !seen.has(r.id));
+    return [...french, ...unique];
+  };
+
+  // Charger les recettes au montage et quand on change de source
   useEffect(() => {
     const loadInitialRecipes = async () => {
       setLoading(true);
@@ -347,16 +147,19 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
         if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
           await loadRecipesFromInventory();
         } else {
-          const frenchRecipes = await getFrenchRecipes();
-          setRecipes(frenchRecipes);
-          setLoading(false);
+          const allRecipes = await loadCompleteRecipes();
+          setRecipes(allRecipes);
+          setBaseRecipes(allRecipes);
         }
       } catch (error) {
         console.error('Erreur lors du chargement initial:', error);
+        const fallback = await getFrenchRecipes();
+        setRecipes(fallback);
+        setBaseRecipes(fallback);
+      } finally {
         setLoading(false);
       }
     };
-    
     loadInitialRecipes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -365,10 +168,76 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
       loadRecipesFromInventory();
     } else if (!useInventory) {
-      getFrenchRecipes().then(setRecipes);
+      loadCompleteRecipes().then(r => { setRecipes(r); setBaseRecipes(r); });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useInventory, apiConfigured]);
+
+  const [baseRecipes, setBaseRecipes] = useState<Recipe[]>([]);
+  const baseRecipesRef = useRef<Recipe[]>([]);
+  baseRecipesRef.current = baseRecipes;
+
+  // Recherche en temps réel avec debounce : TheMealDB + Spoonacular (si configuré)
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      if (baseRecipesRef.current.length > 0) {
+        setRecipes(baseRecipesRef.current);
+      }
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setSearchLoading(true);
+      const search = async () => {
+      try {
+        const [mealDbRecipes, spoonacularData] = await Promise.all([
+          searchMealDbRecipes(q, 15),
+          apiConfigured ? searchRecipes(q, 15).then(d => d.results).catch(() => []) : Promise.resolve([]),
+        ]);
+        if (cancelled) return;
+        const mealDbAsRecipe: Recipe[] = mealDbRecipes.map(r => ({ ...r }));
+        const spoonacularAsRecipe: Recipe[] = (spoonacularData || []).map((r: any) => ({
+          id: (r.id?.toString() || `sp-${r.id}`),
+          name: r.title || r.name || '',
+          image: r.image || '',
+          prepTime: 0,
+          cookTime: r.readyInMinutes || 30,
+          servings: r.servings || 4,
+          difficulty: 'Moyen' as const,
+          category: 'Plat principal',
+          ingredients: [],
+          steps: [],
+        }));
+        const combined = [...mealDbAsRecipe];
+        const seen = new Set(combined.map(r => r.name.toLowerCase()));
+        spoonacularAsRecipe.forEach(r => {
+          if (r.name && !seen.has(r.name.toLowerCase())) {
+            seen.add(r.name.toLowerCase());
+            combined.push(r);
+          }
+        });
+        const base = baseRecipesRef.current;
+        const localMatches = base.filter(r =>
+          r.name.toLowerCase().includes(q.toLowerCase()) ||
+          (r.category && r.category.toLowerCase().includes(q.toLowerCase()))
+        );
+        const localIds = new Set(localMatches.map(x => x.id));
+        const fromApi = combined.filter(x => !localIds.has(x.id));
+        setRecipes([...localMatches, ...fromApi]);
+      } catch (e) {
+        if (!cancelled) console.error('Search error:', e);
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    };
+      search();
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, apiConfigured]);
 
   // Normalize text for matching
   const normalizeText = (text: string) => {
@@ -419,11 +288,10 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     });
   }, [recipes, availableProducts, useInventory]);
 
-  // Filtrer les recettes selon la recherche et les filtres
+  // Filtrer les recettes selon la recherche, catégorie et filtres
   const filteredRecipes = useMemo(() => {
     let filtered = recipesWithAvailability;
 
-    // Filtrer par recherche
     if (searchQuery) {
       filtered = filtered.filter(recipe =>
         recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -431,7 +299,12 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
       );
     }
 
-    // Filtrer selon le type
+    if (categoryFilter && categoryFilter !== 'Toutes') {
+      filtered = filtered.filter(recipe =>
+        recipe.category && recipe.category.toLowerCase().includes(categoryFilter.toLowerCase())
+      );
+    }
+
     if (filter === 'can-make') {
       filtered = filtered.filter(recipe => (recipe.missedIngredientCount || 0) === 0);
     } else if (filter === 'missing-few') {
@@ -441,7 +314,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     }
 
     return filtered;
-  }, [recipesWithAvailability, searchQuery, filter]);
+  }, [recipesWithAvailability, searchQuery, filter, categoryFilter]);
 
   // Statistiques
   const stats = useMemo(() => {
@@ -462,17 +335,31 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                         🍳 Recettes
                       </h1>
             
-                      {/* Message de bienvenue */}
-                      {availableProducts.length > 0 && (
-                        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
-                          <Sparkles className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 text-sm">
-                            <p className="text-green-900 dark:text-green-100 font-medium mb-1">
-                              Mode recettes françaises
-                            </p>
-                            <p className="text-green-700 dark:text-green-300 text-xs">
-                              Recettes traditionnelles françaises disponibles
-                            </p>
+                      {/* Toggle Inventaire / Recettes complètes (françaises + TheMealDB) */}
+                      {apiConfigured && availableProducts.length > 0 && (
+                        <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Source des recettes</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setUseInventory(true)}
+                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                                useInventory
+                                  ? 'bg-green-600 text-white shadow'
+                                  : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-500'
+                              }`}
+                            >
+                              Selon mon inventaire (Spoonacular)
+                            </button>
+                            <button
+                              onClick={() => setUseInventory(false)}
+                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                                !useInventory
+                                  ? 'bg-green-600 text-white shadow'
+                                  : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-500'
+                              }`}
+                            >
+                              Toutes les recettes
+                            </button>
                           </div>
                         </div>
                       )}
@@ -490,12 +377,32 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                         </div>
             
                         {/* État de la recherche */}
-                        {apiConfigured && availableProducts.length > 0 && loading && (
+                        {(loading || searchLoading) && (
                           <div className="w-full mb-4 px-4 py-3 rounded-lg flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700">
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Recherche en cours...</span>
+                            <span>{searchLoading ? 'Recherche...' : 'Chargement...'}</span>
                           </div>
-                        )}          {/* Filters */}
+                        )}
+                      {/* Filtre par catégorie */}
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Catégorie</p>
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {RECIPE_CATEGORIES.map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => setCategoryFilter(cat)}
+                              className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all ${
+                                categoryFilter === cat
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Filters */}
                       {availableProducts.length > 0 && (
                         <div className="flex gap-2 overflow-x-auto pb-2">
                           <button

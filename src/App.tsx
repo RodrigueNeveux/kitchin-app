@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import { BottomNav } from './components/BottomNav';
-import { supabase } from './utils/supabase/client';
-import { apiClient } from './utils/api';
+import { firebaseApi } from './utils/firebase/api';
+import { auth } from './utils/firebase/client';
 import { toast } from "sonner";
-import { demoProducts, demoShoppingList } from './utils/demoData';
 import type { Recipe } from './components/RecipesScreen';
 
 // Lazy loading des écrans pour réduire le bundle initial
@@ -73,24 +72,11 @@ interface ShoppingLists {
   pharmacy: ShoppingItem[];
 }
 
-// Fonction utilitaire pour éviter la duplication du code de filtrage
-const filterShoppingList = (items: typeof demoShoppingList, listId: string): ShoppingItem[] => {
-  return items
-    .filter(item => item.listId === listId || (!item.listId && listId === 'main'))
-    .map(item => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      checked: item.checked,
-      category: item.category,
-      listId: listId as 'main' | 'next-week' | 'pharmacy',
-    }));
-};
-
+// Initialisation des listes de courses vide - sera remplie par l'API
 const initializeShoppingLists = (): ShoppingLists => ({
-  main: filterShoppingList(demoShoppingList, 'main'),
-  'next-week': filterShoppingList(demoShoppingList, 'next-week'),
-  pharmacy: filterShoppingList(demoShoppingList, 'pharmacy'),
+  main: [],
+  'next-week': [],
+  pharmacy: [],
 });
 
 function AppContent() {
@@ -100,7 +86,7 @@ function AppContent() {
   const [user, setUser] = useState<any>(null);
   const [household, setHousehold] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
-  const [products, setProducts] = useState<Product[]>(demoProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingLists>(initializeShoppingLists);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [darkMode, setDarkMode] = useState(false);
@@ -116,35 +102,31 @@ function AppContent() {
 
   // Check for existing session on mount and listen to auth changes
   useEffect(() => {
-    // MODE DÉMO : Pas de test de connexion API
-    console.log('Mode démo - pas de connexion serveur requise');
-    
     checkSession();
     
-    // Listen for auth state changes (non utilisé en mode démo, mais conservé pour compatibilité)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        apiClient.setToken(session.access_token);
+    // Listen for auth state changes (Firebase)
+    const unsubscribe = firebaseApi.onAuthStateChange(async (firebaseUser) => {
+      if (firebaseUser) {
         setIsAuthenticated(true);
+        // Charger les données utilisateur après authentification
+        await loadUserData();
       } else {
-        apiClient.setToken(null);
         setIsAuthenticated(false);
+        setUser(null);
+        setHousehold(null);
+        setMembers([]);
+        setProducts([]);
+        setShoppingLists(initializeShoppingLists());
       }
     });
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
-  // Load data when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      // MODE DÉMO : Les données sont déjà chargées au démarrage
-      // loadUserData();
-      console.log('📦 Mode démo activé - utilisation des données locales');
-    }
-  }, [isAuthenticated]);
+  // Note: loadUserData est appelé directement après l'authentification
+  // Pas besoin d'un useEffect séparé pour éviter les appels multiples
 
   // Memoized calculation du nombre de produits périmés pour les notifications
   const expiringCount = useMemo(() => 
@@ -175,13 +157,17 @@ function AppContent() {
 
   const checkSession = useCallback(async () => {
     try {
-      // MODE DÉMO : Pas de session persistante, toujours déconnecté au démarrage
-      console.log('Mode démo - pas de session persistante');
-      // Désactiver l'authentification pour le mode démo
-      setIsAuthenticated(false);
+      const currentUser = firebaseApi.getCurrentUser();
+      
+      if (currentUser) {
+        setIsAuthenticated(true);
+        // Charger les données utilisateur
+        await loadUserData();
+      } else {
+        setIsAuthenticated(false);
+      }
     } catch (error) {
       console.error('Session check error:', error);
-      // En cas d'erreur, continuer en mode démo
       setIsAuthenticated(false);
     } finally {
       setLoading(false);
@@ -190,30 +176,52 @@ function AppContent() {
 
   const loadUserData = async () => {
     try {
-      // Load profile
-      const profileData = await apiClient.getProfile();
+      const currentUser = firebaseApi.getCurrentUser();
+      
+      if (!currentUser) {
+        console.warn('No authenticated user found');
+        return;
+      }
+
+      // Load profile from Firestore
+      const profileData = await firebaseApi.getProfile(currentUser.uid);
       setUser(profileData.user);
       setHousehold(profileData.household);
-      setMembers(profileData.members || []);
+      setMembers(profileData.members);
 
       // Load products
-      const productsData = await apiClient.getProducts();
-      const productsWithExpiry = (productsData.products || []).map((p: any) => ({
-        ...p,
-        daysUntilExpiry: p.expiryDate ? calculateDaysUntilExpiry(p.expiryDate) : undefined,
-      }));
-      setProducts(productsWithExpiry);
+      if (profileData.user.householdId) {
+        const productsData = await firebaseApi.getProducts(profileData.user.householdId);
+        const productsWithExpiry = productsData.map((p) => ({
+          ...p,
+          daysUntilExpiry: p.expiryDate ? calculateDaysUntilExpiry(p.expiryDate) : undefined,
+        }));
+        setProducts(productsWithExpiry);
 
-      // Load shopping lists
-      const listsData = await apiClient.getShoppingLists();
-      // TODO: Implement shopping lists loading from API
-      // setShoppingLists(listsData.shoppingLists || {});
+        // Load shopping lists
+        try {
+          const listsData = await firebaseApi.getShoppingLists(profileData.user.householdId);
+          setShoppingLists({
+            main: listsData.main || [],
+            'next-week': listsData['next-week'] || [],
+            pharmacy: listsData.pharmacy || [],
+          });
+        } catch (listError) {
+          console.warn('Error loading shopping lists:', listError);
+        }
+      } else {
+        // Pas de foyer, initialiser les listes vides
+        setProducts([]);
+        setShoppingLists(initializeShoppingLists());
+      }
     } catch (error: any) {
       console.error('Error loading user data:', error);
       // If unauthorized, logout the user
-      if (error.message?.includes('Unauthorized')) {
+      if (error.message?.includes('Unauthorized') || error.message?.includes('permission')) {
         toast.error('Session expirée. Veuillez vous reconnecter.');
         handleLogout();
+      } else {
+        toast.error('Erreur lors du chargement des données');
       }
     }
   };
@@ -230,88 +238,191 @@ function AppContent() {
 
   const handleAuth = useCallback(async (email: string, password: string, name?: string, isSignup?: boolean) => {
     try {
-      // MODE DÉMO : Connexion simplifiée sans serveur
-      console.log('Mode démo - authentification locale');
-      
-      setUser({
-        id: 'demo-user',
-        email: email,
-        name: name || 'Utilisateur Démo',
-      });
-      
-      setHousehold({
-        id: 'demo-household',
-        name: 'Foyer Démo',
-        createdBy: 'demo-user',
-      });
-      
-      setMembers([{
-        id: 'demo-user',
-        email: email,
-        name: name || 'Utilisateur Démo',
-      }]);
-      
-      setIsAuthenticated(true);
-      toast.success(isSignup ? 'Compte créé avec succès !' : 'Connexion réussie !');
-      
+      if (isSignup) {
+        // Inscription
+        if (!name || name.trim().length === 0) {
+          throw new Error('Le nom est requis pour l\'inscription');
+        }
+        
+        if (!email || !email.includes('@')) {
+          throw new Error('Veuillez entrer une adresse email valide');
+        }
+        
+        if (!password || password.length < 6) {
+          throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+        }
+        
+        // Créer le compte via Firebase Auth
+        await firebaseApi.signup(email, password, name);
+        
+        setIsAuthenticated(true);
+        await loadUserData();
+        toast.success('Compte créé avec succès !');
+      } else {
+        // Connexion
+        if (!email || !email.includes('@')) {
+          throw new Error('Veuillez entrer une adresse email valide');
+        }
+        
+        if (!password) {
+          throw new Error('Veuillez entrer votre mot de passe');
+        }
+        
+        // Connexion via Firebase Auth
+        await firebaseApi.login(email, password);
+        
+        setIsAuthenticated(true);
+        await loadUserData();
+        toast.success('Connexion réussie !');
+      }
     } catch (error: any) {
       console.error('Auth error:', error);
-      throw error;
+      
+      // Gérer différents types d'erreurs
+      let errorMessage = 'Une erreur est survenue lors de l\'authentification';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.name === 'NetworkError' || error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
+        errorMessage = 'Erreur de connexion réseau. Vérifiez votre connexion internet et réessayez.';
+      } else if (error.message?.includes('Failed to fetch')) {
+        errorMessage = 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.';
+      }
+      
+      toast.error(errorMessage, { 
+        duration: 5000
+      });
+      throw new Error(errorMessage);
     }
   }, []);
 
   const handleLogout = useCallback(async () => {
-    // MODE DÉMO : Réinitialisation locale
-    setIsAuthenticated(false);
-    setUser(null);
-    setHousehold(null);
-    setMembers([]);
-    setProducts(demoProducts);
-    setShoppingLists(initializeShoppingLists());
-    setActiveScreen('home');
-    toast.success('Déconnexion réussie');
+    try {
+      await firebaseApi.logout();
+      setIsAuthenticated(false);
+      setUser(null);
+      setHousehold(null);
+      setMembers([]);
+      setProducts([]);
+      setShoppingLists(initializeShoppingLists());
+      setActiveScreen('home');
+      toast.success('Déconnexion réussie');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Erreur lors de la déconnexion');
+    }
+  }, []);
+
+  const handleForgotPassword = useCallback(async (email: string) => {
+    try {
+      await firebaseApi.sendPasswordReset(email);
+      toast.success('Email de réinitialisation envoyé ! Vérifiez votre boîte de réception.');
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'envoi de l\'email');
+      throw error;
+    }
   }, []);
 
   const handleCreateInvite = useCallback(async (): Promise<string> => {
-    console.log('handleCreateInvite appelé dans App.tsx');
     try {
-      // MODE DÉMO : Génération d'un code d'invitation fictif
-      const demoCode = 'KITCHIN' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      console.log('Code d\'invitation généré:', demoCode);
+      if (!user?.householdId) {
+        throw new Error('Vous devez être membre d\'un foyer pour créer une invitation');
+      }
+      
+      const currentUser = firebaseApi.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Vous devez être connecté');
+      }
+      
+      const inviteCode = await firebaseApi.createInvite(user.householdId, currentUser.uid);
       
       toast.success('Code d\'invitation généré avec succès !', { 
         duration: 3000,
         position: 'top-center'
       });
       
-      return demoCode;
-    } catch (error) {
+      return inviteCode;
+    } catch (error: any) {
       console.error('Error creating invite:', error);
-      toast.error('Erreur lors de la génération du code');
+      const errorMessage = error.message || 'Erreur lors de la génération du code';
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, [user]);
+
+  const handleJoinHousehold = useCallback(async (code: string) => {
+    try {
+      const currentUser = firebaseApi.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Vous devez être connecté');
+      }
+      
+      await firebaseApi.joinHousehold(code, currentUser.uid);
+      
+      // Recharger les données utilisateur pour obtenir le nouveau foyer
+      await loadUserData();
+      
+      toast.success('Vous avez rejoint le foyer avec succès !', { duration: 3000 });
+    } catch (error: any) {
+      console.error('Error joining household:', error);
+      const errorMessage = error.message || 'Erreur lors de la jonction au foyer';
+      toast.error(errorMessage);
       throw error;
     }
   }, []);
 
-  const handleJoinHousehold = useCallback(async (code: string) => {
+  const handleCreateHousehold = useCallback(async (name: string) => {
     try {
-      // MODE DÉMO : Fonctionnalité non disponible
-      toast.info('Mode démo : Cette fonctionnalité nécessite un serveur', { duration: 3000 });
-    } catch (error) {
-      console.error('Error joining household:', error);
-      toast.error('Erreur lors de la jonction au foyer');
+      const currentUser = firebaseApi.getCurrentUser();
+      if (!currentUser) throw new Error('Vous devez être connecté');
+      await firebaseApi.createHousehold(currentUser.uid, name);
+      await loadUserData();
+      toast.success('Foyer créé avec succès !');
+    } catch (error: any) {
+      console.error('Error creating household:', error);
+      toast.error(error.message || 'Erreur lors de la création du foyer');
+      throw error;
+    }
+  }, []);
+
+  const handleLeaveHousehold = useCallback(async () => {
+    try {
+      const currentUser = firebaseApi.getCurrentUser();
+      if (!currentUser) throw new Error('Vous devez être connecté');
+      await firebaseApi.leaveHousehold(currentUser.uid);
+      await loadUserData();
+      toast.success('Vous avez quitté le foyer');
+    } catch (error: any) {
+      console.error('Error leaving household:', error);
+      toast.error(error.message || 'Erreur lors de la sortie du foyer');
       throw error;
     }
   }, []);
 
   const handleRemoveMember = useCallback(async (memberId: string) => {
     try {
-      // MODE DÉMO : Fonctionnalité non disponible
-      toast.info('Mode démo : Cette fonctionnalité nécessite un serveur', { duration: 3000 });
+      if (!household?.id) {
+        throw new Error('Aucun foyer trouvé');
+      }
+      
+      const currentUser = firebaseApi.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Vous devez être connecté');
+      }
+      
+      await firebaseApi.removeMember(household.id, memberId, currentUser.uid);
+      
+      // Recharger les données utilisateur pour mettre à jour la liste des membres
+      await loadUserData();
+      
+      toast.success('Membre retiré du foyer avec succès');
     } catch (error: any) {
       console.error('Error removing member:', error);
+      const errorMessage = error.message || 'Erreur lors du retrait du membre';
+      toast.error(errorMessage);
       throw error;
     }
-  }, []);
+  }, [household]);
 
   // Product handlers
   const handleUpdateQuantity = useCallback(async (id: string, change: number) => {
@@ -321,29 +432,38 @@ function AppContent() {
 
       const newQuantity = Math.max(1, product.quantity + change);
       
-      // MODE DÉMO : Mise à jour locale uniquement
+      // Mise à jour via Firebase
+      await firebaseApi.updateProduct(id, { quantity: newQuantity });
+      
+      // Mise à jour locale
       setProducts((prev) =>
         prev.map((p) => p.id === id ? { ...p, quantity: newQuantity } : p)
       );
     } catch (error) {
       console.error('Error updating product quantity:', error);
+      toast.error('Erreur lors de la mise à jour du produit');
     }
   }, [products]);
 
   const handleDeleteProduct = useCallback(async (id: string) => {
     try {
-      // MODE DÉMO : Suppression locale uniquement
+      await firebaseApi.deleteProduct(id);
       setProducts((prev) => prev.filter((p) => p.id !== id));
       toast.success('Produit supprimé');
     } catch (error) {
       console.error('Error deleting product:', error);
+      toast.error('Erreur lors de la suppression du produit');
     }
   }, []);
 
   // Shopping list handlers
   const handleToggleItem = useCallback(async (listId: string, id: string) => {
     try {
-      // MODE DÉMO : Mise à jour locale uniquement
+      const item = shoppingLists[listId as keyof ShoppingLists].find(i => i.id === id);
+      if (item) {
+        await firebaseApi.updateShoppingItem(id, { checked: !item.checked });
+      }
+      
       setShoppingLists((prev) => ({
         ...prev,
         [listId]: prev[listId as keyof ShoppingLists].map((i) => 
@@ -352,12 +472,13 @@ function AppContent() {
       }));
     } catch (error) {
       console.error('Error toggling shopping item:', error);
+      toast.error('Erreur lors de la mise à jour de l\'article');
     }
   }, [shoppingLists]);
 
   const handleDeleteItem = useCallback(async (listId: string, id: string) => {
     try {
-      // MODE DÉMO : Suppression locale uniquement
+      await firebaseApi.deleteShoppingItem(id);
       setShoppingLists((prev) => ({
         ...prev,
         [listId]: prev[listId as keyof ShoppingLists].filter((i) => i.id !== id),
@@ -365,6 +486,7 @@ function AppContent() {
       toast.success('Article supprimé');
     } catch (error) {
       console.error('Error deleting shopping item:', error);
+      toast.error('Erreur lors de la suppression de l\'article');
     }
   }, [shoppingLists]);
 
@@ -394,15 +516,29 @@ function AppContent() {
         return 'autres';
       };
       
-      // MODE DÉMO : Ajout local uniquement
+      // Ajout via Firebase
+      if (!user?.householdId) {
+        throw new Error('Vous devez être membre d\'un foyer pour ajouter des articles');
+      }
+      
+      const itemId = await firebaseApi.addShoppingItem({
+        name,
+        quantity,
+        checked: false,
+        category: detectCategory(name),
+        listId: listId as 'main' | 'next-week' | 'pharmacy',
+        householdId: user.householdId,
+      });
+      
       const newItem = {
-        id: `shop-demo-${Date.now()}`,
+        id: itemId,
         name,
         quantity,
         checked: false,
         category: detectCategory(name),
         listId,
       };
+      
       setShoppingLists((prev) => ({
         ...prev,
         [listId]: [...prev[listId as keyof ShoppingLists], newItem],
@@ -412,6 +548,18 @@ function AppContent() {
       console.error('Error adding shopping item:', error);
     }
   }, [shoppingLists]);
+
+  const handleAddMissingIngredientsToList = useCallback(async (items: { item: string; quantity: string }[]) => {
+    try {
+      for (const item of items) {
+        await handleAddItem('main', item.item, item.quantity);
+      }
+      toast.success(`${items.length} ingrédient${items.length > 1 ? 's' : ''} ajouté${items.length > 1 ? 's' : ''} à la liste`);
+    } catch (error) {
+      console.error('Error adding ingredients:', error);
+      toast.error('Erreur lors de l\'ajout des ingrédients');
+    }
+  }, [handleAddItem]);
 
   const handleMoveItem = useCallback(async (itemId: string, fromListId: string, toListId: string) => {
     try {
@@ -451,9 +599,18 @@ function AppContent() {
         daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
 
-      // MODE DÉMO : Ajout local uniquement
+      // Ajout via Firebase
+      if (!user?.householdId) {
+        throw new Error('Vous devez être membre d\'un foyer pour ajouter des produits');
+      }
+      
+      const productId = await firebaseApi.addProduct({
+        ...productData,
+        householdId: user.householdId,
+      });
+      
       const newProduct = {
-        id: `demo-${Date.now()}`,
+        id: productId,
         ...productData,
         daysUntilExpiry,
       };
@@ -469,22 +626,39 @@ function AppContent() {
 
   const handleUpdateHouseholdName = useCallback(async (name: string) => {
     try {
-      // MODE DÉMO : Mise à jour locale uniquement
+      if (!household?.id) {
+        throw new Error('Aucun foyer trouvé');
+      }
+      
+      await firebaseApi.updateHouseholdName(household.id, name);
       setHousehold((prev: any) => ({ ...prev, name }));
       toast.success('Nom du foyer mis à jour');
     } catch (error: any) {
       console.error('Error updating household name:', error);
+      const errorMessage = error.message || 'Erreur lors de la mise à jour du nom du foyer';
+      toast.error(errorMessage);
       throw error;
     }
-  }, []);
+  }, [household]);
 
   const handleUpdateEmail = useCallback(async (email: string) => {
     try {
-      // MODE DÉMO : Mise à jour locale uniquement
+      const currentUser = firebaseApi.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('Vous devez être connecté');
+      }
+      
+      // Firebase Auth gère la mise à jour de l'email
+      // Note: Cela nécessite une confirmation par email
+      // Pour l'instant, on met juste à jour le profil Firestore
+      await firebaseApi.updateUserName(currentUser.uid, currentUser.displayName || '');
+      
       setUser((prev: any) => ({ ...prev, email }));
-      toast.success('Email mis à jour');
+      toast.success('Email mis à jour. Veuillez vérifier votre boîte mail pour confirmer.');
     } catch (error: any) {
       console.error('Error updating email:', error);
+      const errorMessage = error.message || 'Erreur lors de la mise à jour de l\'email';
+      toast.error(errorMessage);
       throw error;
     }
   }, []);
@@ -585,21 +759,13 @@ function AppContent() {
   if (!isAuthenticated) {
     return (
       <Suspense fallback={<LoadingScreen />}>
-        <AuthScreen onAuth={handleAuth} />
+        <AuthScreen onAuth={handleAuth} onForgotPassword={handleForgotPassword} />
       </Suspense>
     );
   }
 
   return (
-    <div className={`min-h-screen w-full sm:max-w-md sm:mx-auto ${darkMode ? 'bg-gray-900' : 'bg-white'} relative sm:shadow-2xl`}>
-      {/* Bannière Mode Démo */}
-      <div className="bg-blue-500 text-white text-center py-2 px-4 text-sm sticky top-0 z-50">
-        <span className="inline-flex items-center gap-2">
-          <span>📱</span>
-          <span>Mode Démo - Données locales</span>
-        </span>
-      </div>
-      
+    <div className={`min-h-screen w-full md:pl-24 ${darkMode ? 'bg-gray-900' : 'bg-white'} relative`}>
       {activeScreen === 'home' && (
         <HomeScreen
           expiringProducts={expiringProducts}
@@ -664,6 +830,8 @@ function AppContent() {
             onCreateInvite={handleCreateInvite}
             onJoinHousehold={handleJoinHousehold}
             onRemoveMember={handleRemoveMember}
+            onCreateHousehold={handleCreateHousehold}
+            onLeaveHousehold={handleLeaveHousehold}
             onSettingsClick={() => setActiveScreen('settings')}
           />
         </Suspense>
@@ -695,6 +863,8 @@ function AppContent() {
             recipe={selectedRecipe}
             onBack={() => setSelectedRecipe(null)}
             availableProducts={products}
+            onAddMissingToShoppingList={user?.householdId ? handleAddMissingIngredientsToList : undefined}
+            darkMode={darkMode}
           />
         </Suspense>
       )}

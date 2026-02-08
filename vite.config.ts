@@ -24,50 +24,73 @@ export default defineConfig({
     // Optimisation du code splitting améliorée
     rollupOptions: {
       output: {
+        // SOLUTION : Simplifier le code splitting pour éviter les problèmes de chargement React
+        // Tous les composants qui utilisent React restent dans le chunk principal
+        // Le lazy loading dans App.tsx gère déjà le code splitting au niveau applicatif
         manualChunks: (id) => {
-          // Séparer les bibliothèques UI volumineuses
-          if (id.includes('@radix-ui')) {
-            // Grouper tous les composants Radix UI ensemble
-            return 'radix-ui';
-          }
-          // Séparer les dépendances de base
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
+            // React et react-dom dans le chunk principal (CRITIQUE)
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react/jsx-runtime') || id.includes('scheduler')) {
+              return undefined; // Dans index.js
             }
-            if (id.includes('supabase')) {
+            
+            // Packages qui ne dépendent PAS de React
+            if (id.includes('supabase') && !id.includes('react')) {
               return 'vendor-supabase';
             }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('recharts')) {
-              return 'vendor-charts';
-            }
-            if (id.includes('sonner')) {
-              return 'vendor-notifications';
+            if (id.includes('firebase') && !id.includes('react')) {
+              return 'vendor-firebase';
             }
             if (id.includes('html5-qrcode')) {
               return 'vendor-qrcode';
             }
-            // Autres dépendances node_modules
-            return 'vendor-other';
+            if ((id.includes('clsx') || id.includes('tailwind-merge') || id.includes('date-fns')) && !id.includes('react')) {
+              return 'vendor-utils';
+            }
+            
+            // TOUS les packages qui utilisent React
+            const reactDeps = [
+              'react-hook-form',
+              'embla-carousel-react',
+              'embla-carousel',
+              'class-variance-authority',
+              'cmdk',
+              'vaul',
+              'input-otp',
+              'next-themes',
+              'react-day-picker',
+              'react-resizable-panels',
+              '@radix-ui',
+              'lucide-react',
+              'recharts',
+              'sonner',
+              '@hookform',
+              'use-sidebar',
+              'use-mobile',
+            ];
+            
+            if (reactDeps.some(dep => id.includes(dep))) {
+              return 'vendor-react-deps';
+            }
+            
+            if (id.includes('/@') || (id.includes('@') && !id.includes('supabase'))) {
+              return 'vendor-react-deps';
+            }
+            
+            return 'vendor-react-deps';
           }
-          // Chunks pour les composants volumineux
-          if (id.includes('/components/RecipesScreen') || id.includes('/components/RecipeDetailScreen')) {
-            return 'recipes';
-          }
-          if (id.includes('/utils/recipesData')) {
-            return 'recipes-data';
-          }
-          // Grouper les composants UI
-          if (id.includes('/components/ui/')) {
-            return 'ui-components';
-          }
+          
+          // IMPORTANT : Tous les composants source restent dans le chunk principal
+          // Cela garantit que React est toujours disponible
+          // Le lazy loading dans App.tsx gère le code splitting au niveau applicatif
+          return undefined;
         },
         // Optimiser les noms de chunks
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',
+        // IMPORTANT : Le chunk principal (index.js) contient React et sera chargé en premier
+        // vendor-react-deps dépendra du chunk principal, donc React sera disponible avant
+        // Rollup gère automatiquement les dépendances entre chunks
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];
@@ -87,7 +110,17 @@ export default defineConfig({
     esbuild: {
       drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
       legalComments: 'none', // Supprimer les commentaires légaux
+      jsx: 'automatic', // Utiliser le nouveau JSX transform
     },
+    // IMPORTANT : Désactiver le code splitting pour éviter les problèmes de chargement React
+    // Les chunks dynamiques créés par lazy() peuvent se charger avant React
+    // En désactivant le code splitting, tous les composants restent dans le chunk principal
+    // Le lazy loading dans App.tsx gère déjà le code splitting au niveau applicatif
+    // Cela garantit que React est toujours disponible
+    // Note: Cela peut augmenter la taille du bundle initial, mais évite les erreurs de chargement
+    // commonjsOptions: {
+    //   transformMixedEsModules: true,
+    // },
     // Augmenter la taille des chunks pour de meilleures performances
     chunkSizeWarningLimit: 600, // Réduire pour détecter les chunks trop gros
     // Optimiser la mise en cache des assets (images < 4KB en inline base64)
@@ -110,6 +143,10 @@ export default defineConfig({
       'react',
       'react-dom',
       'react/jsx-runtime',
+      'firebase/app',
+      'firebase/auth',
+      'firebase/firestore',
+      'firebase/storage',
     ],
     exclude: ['html5-qrcode'], // Exclure les dépendances lourdes du pré-bundling
     // Pré-bundler les dépendances lourdes

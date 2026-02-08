@@ -1,4 +1,4 @@
-import { ArrowLeft, Users, Copy, LogOut, UserPlus, Check, UserX, Settings } from 'lucide-react';
+import { ArrowLeft, Users, Copy, LogOut, UserPlus, Check, UserX, Settings, QrCode, DoorOpen } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from "sonner";
 
@@ -22,8 +22,14 @@ interface ProfileScreenProps {
   onCreateInvite: () => Promise<string>;
   onJoinHousehold: (code: string) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
+  onCreateHousehold?: (name: string) => Promise<void>;
+  onLeaveHousehold?: () => Promise<void>;
   onSettingsClick?: () => void;
 }
+
+// URL pour générer un QR code (API gratuite)
+const getQRCodeUrl = (text: string, size = 200) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
 
 export function ProfileScreen({
   user,
@@ -34,26 +40,30 @@ export function ProfileScreen({
   onCreateInvite,
   onJoinHousehold,
   onRemoveMember,
+  onCreateHousehold,
+  onLeaveHousehold,
   onSettingsClick,
 }: ProfileScreenProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [showInvite, setShowInvite] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [joinCode, setJoinCode] = useState('');
+  const [newHouseholdName, setNewHouseholdName] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Check if current user is the household owner
   const isOwner = household?.createdBy === user?.id;
+  const hasHousehold = !!household;
 
   const handleCreateInvite = async () => {
-    console.log('Bouton Inviter cliqué');
     setLoading(true);
     try {
       const code = await onCreateInvite();
       setInviteCode(code);
       setShowInvite(true);
-      console.log('Code d\'invitation reçu:', code);
     } catch (error) {
       console.error('Error creating invite:', error);
     } finally {
@@ -69,14 +79,21 @@ export function ProfileScreen({
   };
 
   const handleJoinHousehold = async () => {
-    if (!joinCode.trim()) return;
+    if (!joinCode.trim()) {
+      toast.error('Veuillez entrer un code d\'invitation');
+      return;
+    }
     setLoading(true);
     try {
-      await onJoinHousehold(joinCode.trim());
+      // Nettoyer le code (supprimer les tirets et espaces)
+      const cleanCode = joinCode.replace(/[-\s]/g, '').trim();
+      await onJoinHousehold(cleanCode);
       setShowJoin(false);
       setJoinCode('');
-    } catch (error) {
+      // Le toast de succès est géré dans App.tsx
+    } catch (error: any) {
       console.error('Error joining household:', error);
+      // L'erreur est déjà gérée dans App.tsx avec toast.error
     } finally {
       setLoading(false);
     }
@@ -98,11 +115,43 @@ export function ProfileScreen({
     }
   };
 
+  const handleCreateHousehold = async () => {
+    const name = newHouseholdName.trim() || `Foyer de ${user?.name || 'Utilisateur'}`;
+    if (!onCreateHousehold) return;
+    setLoading(true);
+    try {
+      await onCreateHousehold(name);
+      setShowCreate(false);
+      setNewHouseholdName('');
+    } catch (error) {
+      console.error('Error creating household:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLeaveHousehold = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir quitter ce foyer ? Vous perdrez l\'accès à l\'inventaire et aux listes partagées.')) {
+      return;
+    }
+    if (!onLeaveHousehold) return;
+    setLoading(true);
+    try {
+      await onLeaveHousehold();
+    } catch (error) {
+      console.error('Error leaving household:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inviteLink = inviteCode ? `https://kitchin.app/join/${inviteCode}` : '';
+
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
-        <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -135,7 +184,7 @@ export function ProfileScreen({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-6">
-        <div className="max-w-md mx-auto space-y-6">
+        <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* User Info */}
           <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
             <h3 className="text-gray-900 dark:text-white mb-4">
@@ -169,199 +218,222 @@ export function ProfileScreen({
               </h3>
               <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Nom du foyer
-              </p>
-              <p className="text-gray-900 dark:text-white">
-                {household?.name || 'Aucun foyer'}
-              </p>
-            </div>
+            
+            {hasHousehold ? (
+              <>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Nom du foyer
+                  </p>
+                  <p className="text-gray-900 dark:text-white">
+                    {household?.name}
+                  </p>
+                </div>
 
-            {/* Members List */}
-            <div className="mb-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                Membres ({members.length})
-              </p>
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                      <span className="text-green-700 dark:text-green-300">
-                        {member.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-gray-900 dark:text-white text-sm">
-                          {member.name}
-                        </p>
-                        {member.id === household?.createdBy && (
-                          <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
-                            Propriétaire
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {member.email}
-                      </p>
-                    </div>
-                    
-                    {/* Remove button - only visible to owner and not for themselves */}
-                    {isOwner && member.id !== user?.id && (
-                      <button
-                        onClick={() => handleRemoveMember(member.id, member.name)}
-                        disabled={loading}
-                        className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
-                        title="Retirer ce membre"
+                {/* Members List */}
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    Membres ({members.length})
+                  </p>
+                  <div className="space-y-2">
+                    {members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors"
                       >
-                        <UserX className="w-5 h-5 text-red-500 dark:text-red-400" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Invite Section */}
-            <div className="space-y-2">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('Clic sur bouton Inviter détecté');
-                  handleCreateInvite();
-                }}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 cursor-pointer active:scale-95 transform"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <UserPlus className="w-5 h-5" />
-                <span className="text-white" style={{ WebkitTextFillColor: '#ffffff', color: '#ffffff' }}>
-                  Inviter un membre
-                </span>
-              </button>
-
-              {showInvite && inviteCode && (
-                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-5 rounded-xl border border-green-200 dark:border-green-700 shadow-sm transition-colors relative">
-                  <button
-                    onClick={() => setShowInvite(false)}
-                    className="absolute top-3 right-3 p-1 hover:bg-green-200 dark:hover:bg-green-700 rounded-full transition-colors"
-                    title="Fermer"
-                  >
-                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                  
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-green-600 dark:bg-green-500 rounded-full flex items-center justify-center">
-                      <Check className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-gray-900 dark:text-white">
-                      Code d'invitation généré !
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {/* Code d'invitation */}
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        Code d'invitation :
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 bg-white dark:bg-gray-800 px-4 py-3 rounded-lg border-2 border-green-300 dark:border-green-600 text-green-700 dark:text-green-400 text-lg tracking-wider text-center select-all">
-                          {inviteCode.slice(0, 9)}-{inviteCode.slice(9)}
-                        </code>
-                        <button
-                          onClick={handleCopyCode}
-                          className="p-3 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg border-2 border-green-300 dark:border-green-600 transition-colors"
-                          title="Copier le code"
-                        >
-                          {copied ? (
-                            <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          ) : (
-                            <Copy className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Lien d'invitation */}
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        Ou partagez ce lien :
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg border border-green-200 dark:border-green-700 overflow-hidden">
-                          <p className="text-xs text-green-700 dark:text-green-400 truncate">
-                            https://kitchin.app/join/{inviteCode}
+                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                          <span className="text-green-700 dark:text-green-300">
+                            {member.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-gray-900 dark:text-white text-sm">
+                              {member.name}
+                            </p>
+                            {member.id === household?.createdBy && (
+                              <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
+                                Propriétaire
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {member.email}
                           </p>
                         </div>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(`https://kitchin.app/join/${inviteCode}`);
-                            toast.success('Lien copié !', { duration: 2000 });
-                          }}
-                          className="p-2 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg border border-green-200 dark:border-green-700 transition-colors"
-                          title="Copier le lien"
-                        >
-                          <Copy className="w-4 h-4 text-green-600 dark:text-green-400" />
-                        </button>
+                        {isOwner && member.id !== user?.id && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id, member.name)}
+                            disabled={loading}
+                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                            title="Retirer ce membre"
+                          >
+                            <UserX className="w-5 h-5 text-red-500 dark:text-red-400" />
+                          </button>
+                        )}
                       </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-2 pt-2">
-                      <div className="w-5 h-5 flex-shrink-0 mt-0.5">
-                        <svg className="w-full h-full text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Invite Section - Only when in a household */}
+                <div className="space-y-2">
+                  <button
+                    onClick={handleCreateInvite}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 cursor-pointer active:scale-95 transform"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    Inviter un membre
+                  </button>
+
+                  {showInvite && inviteCode && (
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-5 rounded-xl border border-green-200 dark:border-green-700 shadow-sm transition-colors relative">
+                      <button
+                        onClick={() => { setShowInvite(false); setShowQRCode(false); }}
+                        className="absolute top-3 right-3 p-1 hover:bg-green-200 dark:hover:bg-green-700 rounded-full transition-colors"
+                        title="Fermer"
+                      >
+                        <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
+                      </button>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 bg-green-600 dark:bg-green-500 rounded-full flex items-center justify-center">
+                          <Check className="w-5 h-5 text-white" />
+                        </div>
+                        <p className="text-gray-900 dark:text-white font-medium">Code d'invitation généré !</p>
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-300">
-                        Partagez ce code ou ce lien avec votre proche. Le code expire dans 7 jours. En mode démo, le code est purement illustratif.
-                      </p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 bg-white dark:bg-gray-800 px-4 py-3 rounded-lg border-2 border-green-300 dark:border-green-600 text-green-700 dark:text-green-400 text-lg tracking-wider text-center select-all font-mono">
+                            {inviteCode.length > 9 ? `${inviteCode.slice(0, 9)}-${inviteCode.slice(9)}` : inviteCode}
+                          </code>
+                          <button onClick={handleCopyCode} className="p-3 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg border-2 border-green-300 dark:border-green-600 transition-colors" title="Copier le code">
+                            {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-green-600" />}
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(inviteLink);
+                              toast.success('Lien copié !', { duration: 2000 });
+                            }}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                          >
+                            <Copy className="w-4 h-4 text-green-600" />
+                            Copier le lien
+                          </button>
+                          <button
+                            onClick={() => setShowQRCode(!showQRCode)}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                            title="Afficher le QR code"
+                          >
+                            <QrCode className="w-5 h-5 text-green-600" />
+                            QR Code
+                          </button>
+                        </div>
+                        {showQRCode && inviteLink && (
+                          <div className="flex justify-center pt-2">
+                            <img src={getQRCodeUrl(inviteLink, 180)} alt="QR Code invitation" className="rounded-lg border-2 border-green-200 dark:border-green-700 bg-white p-2" />
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-2">
+                          <svg className="w-4 h-4 flex-shrink-0 mt-0.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          Partagez ce code ou ce lien. Le code expire dans 7 jours.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejoindre un autre foyer - pour ceux qui veulent changer */}
+                  <button
+                    onClick={() => setShowJoin(!showJoin)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                  >
+                    <Users className="w-5 h-5" />
+                    Rejoindre un autre foyer
+                  </button>
+                  {showJoin && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Vous quitterez ce foyer en rejoignant un autre. Entrez le code :</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={joinCode}
+                          onChange={(e) => setJoinCode(e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase())}
+                          placeholder="Code d'invitation"
+                          className="flex-1 px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white uppercase"
+                        />
+                        <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">Rejoindre</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quitter le foyer - pour les membres non-propriétaires */}
+                  {!isOwner && onLeaveHousehold && (
+                    <button
+                      onClick={handleLeaveHousehold}
+                      disabled={loading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    >
+                      <DoorOpen className="w-5 h-5" />
+                      Quitter le foyer
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              /* Pas de foyer - Créer ou Rejoindre */
+              <div className="space-y-4">
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <p className="text-amber-800 dark:text-amber-200 text-sm mb-2">
+                    Vous n'êtes pas encore dans un foyer. Créez-en un ou rejoignez-en un avec un code d'invitation.
+                  </p>
+                </div>
+                {onCreateHousehold && (
+                  <>
+                    <button onClick={() => setShowCreate(!showCreate)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                      <UserPlus className="w-5 h-5" />
+                      Créer un foyer
+                    </button>
+                    {showCreate && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800 space-y-2">
+                        <input
+                          type="text"
+                          value={newHouseholdName}
+                          onChange={(e) => setNewHouseholdName(e.target.value)}
+                          placeholder="Nom du foyer (ex: Maison Dupont)"
+                          className="w-full px-4 py-2 border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        />
+                        <button onClick={handleCreateHousehold} disabled={loading} className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">Créer</button>
+                      </div>
+                    )}
+                  </>
+                )}
+                <button onClick={() => setShowJoin(!showJoin)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                  <Users className="w-5 h-5" />
+                  Rejoindre un foyer avec un code
+                </button>
+                {showJoin && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Entrez le code d'invitation :</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase())}
+                        placeholder="Code d'invitation"
+                        className="flex-1 px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white uppercase"
+                      />
+                      <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">Rejoindre</button>
                     </div>
                   </div>
-                </div>
-              )}
-
-              <button
-                onClick={() => setShowJoin(!showJoin)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                <Users className="w-5 h-5" />
-                Rejoindre un foyer
-              </button>
-
-              {showJoin && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700 mb-2">
-                    Entrez le code d'invitation :
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                      placeholder="ABC123"
-                      className="flex-1 px-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase bg-white text-gray-900 placeholder:text-gray-400"
-                      style={{ WebkitTextFillColor: '#111827', color: '#111827' }}
-                      maxLength={6}
-                    />
-                    <button
-                      onClick={handleJoinHousehold}
-                      disabled={loading || !joinCode.trim()}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      Rejoindre
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </section>
         </div>
       </div>
