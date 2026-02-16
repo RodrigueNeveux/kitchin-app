@@ -87,7 +87,6 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     try {
       const spoonacularRecipes = await findRecipesByIngredients(inventoryIngredients, 20, 1);
       
-      console.log('🌍 Traduction automatique des titres de recettes...');
       
       // Traduire tous les titres automatiquement
       const titles = spoonacularRecipes.map(r => r.title);
@@ -113,7 +112,6 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
 
       setRecipes(convertedRecipes);
       setBaseRecipes(convertedRecipes);
-      console.log(`✅ ${convertedRecipes.length} recettes traduites et chargées`);
       toast.success(`${convertedRecipes.length} recettes trouvées !`);
     } catch (error) {
       console.error('Erreur lors du chargement des recettes:', error);

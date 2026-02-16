@@ -78,13 +78,11 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
 
       setTranslating(true);
       try {
-        console.log('🌍 Traduction automatique en cours...');
 
         // Traduire les étapes
         if (stepsToTranslate.length > 0) {
           const translated = await translateTexts(stepsToTranslate);
           setTranslatedSteps(translated);
-          console.log(`✅ ${translated.length} étapes traduites`);
         }
 
         // Traduire les ingrédients
@@ -97,7 +95,6 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
             quantity: `${ing.amount} ${ing.unit}`,
           }));
           setTranslatedIngredients(translatedIngs);
-          console.log(`✅ ${translatedIngs.length} ingrédients traduits`);
         } else if (ingredientsToTranslate.length > 0) {
           const ingredientNames = ingredientsToTranslate.map((ing: any) => ing.item);
           const translatedNames = await translateTexts(ingredientNames);
@@ -107,10 +104,8 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
             quantity: ing.quantity,
           }));
           setTranslatedIngredients(translatedIngs);
-          console.log(`✅ ${translatedIngs.length} ingrédients traduits`);
         }
 
-        console.log('✅ Traduction automatique terminée');
       } catch (error) {
         console.error('❌ Erreur lors de la traduction automatique:', error);
       } finally {

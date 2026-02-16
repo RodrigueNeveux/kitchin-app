@@ -186,7 +186,6 @@ function AppContent() {
       const currentUser = firebaseApi.getCurrentUser();
       
       if (!currentUser) {
-        console.warn('No authenticated user found');
         return;
       }
 
@@ -214,7 +213,6 @@ function AppContent() {
             pharmacy: listsData.pharmacy || [],
           });
         } catch (listError) {
-          console.warn('Error loading shopping lists:', listError);
         }
       } else {
         // Pas de foyer, initialiser les listes vides
@@ -671,82 +669,6 @@ function AppContent() {
     }
   }, []);
 
-  const handleAddSampleIngredients = useCallback(async () => {
-    const sampleIngredients = [
-      // Frigo
-      { name: 'Lait', quantity: 2, category: 'fridge' as const },
-      { name: 'Œufs', quantity: 12, category: 'fridge' as const },
-      { name: 'Beurre', quantity: 1, category: 'fridge' as const },
-      { name: 'Fromage râpé', quantity: 1, category: 'fridge' as const },
-      { name: 'Mozzarella', quantity: 2, category: 'fridge' as const },
-      { name: 'Parmesan', quantity: 1, category: 'fridge' as const },
-      { name: 'Crème fraîche', quantity: 2, category: 'fridge' as const },
-      { name: 'Lardons', quantity: 1, category: 'fridge' as const },
-      { name: 'Poulet', quantity: 1, category: 'fridge' as const },
-      { name: 'Viande hachée', quantity: 1, category: 'fridge' as const },
-      { name: 'Carottes', quantity: 5, category: 'fridge' as const },
-      { name: 'Tomates', quantity: 6, category: 'fridge' as const },
-      { name: 'Oignon', quantity: 4, category: 'fridge' as const },
-      { name: 'Ail', quantity: 1, category: 'fridge' as const },
-      { name: 'Laitue romaine', quantity: 2, category: 'fridge' as const },
-      { name: 'Courgettes', quantity: 3, category: 'fridge' as const },
-      { name: 'Poivrons', quantity: 2, category: 'fridge' as const },
-      { name: 'Aubergines', quantity: 2, category: 'fridge' as const },
-      { name: 'Citron', quantity: 3, category: 'fridge' as const },
-      { name: 'Pommes', quantity: 6, category: 'fridge' as const },
-      { name: 'Mascarpone', quantity: 1, category: 'fridge' as const },
-      
-      // Placard
-      { name: 'Spaghetti', quantity: 2, category: 'pantry' as const },
-      { name: 'Pâtes', quantity: 3, category: 'pantry' as const },
-      { name: 'Riz', quantity: 2, category: 'pantry' as const },
-      { name: 'Farine', quantity: 1, category: 'pantry' as const },
-      { name: 'Sucre', quantity: 1, category: 'pantry' as const },
-      { name: 'Sel', quantity: 1, category: 'pantry' as const },
-      { name: 'Poivre', quantity: 1, category: 'pantry' as const },
-      { name: 'Huile d\'olive', quantity: 1, category: 'pantry' as const },
-      { name: 'Sauce tomate', quantity: 3, category: 'pantry' as const },
-      { name: 'Chocolat noir', quantity: 2, category: 'pantry' as const },
-      { name: 'Lait de coco', quantity: 2, category: 'pantry' as const },
-      { name: 'Curry en poudre', quantity: 1, category: 'pantry' as const },
-      { name: 'Herbes de Provence', quantity: 1, category: 'pantry' as const },
-      { name: 'Thym', quantity: 1, category: 'pantry' as const },
-      { name: 'Romarin', quantity: 1, category: 'pantry' as const },
-      { name: 'Basilic', quantity: 1, category: 'pantry' as const },
-      { name: 'Origan', quantity: 1, category: 'pantry' as const },
-      { name: 'Cannelle', quantity: 1, category: 'pantry' as const },
-      { name: 'Muscade', quantity: 1, category: 'pantry' as const },
-      { name: 'Levure chimique', quantity: 1, category: 'pantry' as const },
-      { name: 'Café', quantity: 1, category: 'pantry' as const },
-      { name: 'Cacao en poudre', quantity: 1, category: 'pantry' as const },
-      { name: 'Confiture d\'abricot', quantity: 1, category: 'pantry' as const },
-      { name: 'Biscuits à la cuillère', quantity: 1, category: 'pantry' as const },
-      
-      // Congélateur
-      { name: 'Pommes de terre', quantity: 3, category: 'freezer' as const },
-      { name: 'Steaks de bœuf', quantity: 4, category: 'freezer' as const },
-    ];
-
-    try {
-      toast.info('Ajout des ingrédients en cours...');
-      
-      for (const ingredient of sampleIngredients) {
-        try {
-          await handleAddProduct(ingredient);
-          // Small delay to avoid overwhelming the server
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.error(`Error adding ${ingredient.name}:`, error);
-        }
-      }
-      
-      toast.success('Ingrédients de base ajoutés avec succès !');
-    } catch (error) {
-      console.error('Error adding sample ingredients:', error);
-      toast.error('Erreur lors de l\'ajout des ingrédients');
-    }
-  }, [handleAddProduct]);
-
   // Memoized calculations pour éviter les recalculs inutiles
   const expiringProducts = useMemo(() => 
     products
@@ -803,7 +725,6 @@ function AppContent() {
             onUpdateQuantity={handleUpdateQuantity}
             onDeleteProduct={handleDeleteProduct}
             onAddProduct={() => setActiveScreen('add-product')}
-            onAddSampleIngredients={handleAddSampleIngredients}
           />
         </Suspense>
       )}

@@ -21,10 +21,8 @@ function loadCacheFromStorage(): void {
       Object.entries(parsed).forEach(([key, value]) => {
         translationCache.set(key, value as string);
       });
-      console.log(`📦 Cache de traduction chargé: ${translationCache.size} entrées`);
     }
   } catch (error) {
-    console.warn('⚠️ Erreur lors du chargement du cache:', error);
   }
 }
 
@@ -45,7 +43,6 @@ function saveCacheToStorage(): void {
   } catch (error) {
     // Si localStorage est plein ou indisponible, ignorer silencieusement
     if (error instanceof Error && error.name === 'QuotaExceededError') {
-      console.warn('⚠️ Cache localStorage plein, nettoyage...');
       // Nettoyer les anciennes entrées
       const entries = Array.from(translationCache.entries());
       const toKeep = entries.slice(-Math.floor(MAX_CACHE_SIZE / 2));
@@ -94,7 +91,6 @@ export async function translateText(text: string): Promise<string> {
     const response = await fetch(url);
     
     if (!response.ok) {
-      console.warn('⚠️ Erreur API de traduction, utilisation du texte original');
       return text;
     }
 
@@ -111,10 +107,8 @@ export async function translateText(text: string): Promise<string> {
         setTimeout(() => saveCacheToStorage(), 100);
       }
       
-      console.log(`✅ Traduit: "${text}" → "${translated}"`);
       return translated;
     } else {
-      console.warn('⚠️ Réponse API invalide, utilisation du texte original');
       return text;
     }
   } catch (error) {
@@ -156,7 +150,6 @@ export function clearTranslationCache(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CACHE_KEY);
   }
-  console.log('🗑️ Cache de traduction effacé');
 }
 
 /**

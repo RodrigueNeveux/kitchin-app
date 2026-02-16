@@ -5,21 +5,39 @@
   --kitchin-text: #292524;     /* stone-800 */
   --kitchin-text-muted: #57534e; /* stone-600 */
   --kitchin-border: #d6d3d1;   /* stone-300 */
+  /* Safe area pour mobile (encoche, barre d'accueil) */
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+  --sar: env(safe-area-inset-right);
 }
 
 html {
   min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overscroll-behavior: none;
 }
 
 #root {
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   min-width: 100%;
+  padding: var(--sat) var(--sar) var(--sab) var(--sal);
+  box-sizing: border-box;
+}
+
+/* Optimisation tactile mobile */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {

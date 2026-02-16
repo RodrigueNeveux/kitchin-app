@@ -18,7 +18,6 @@ interface InventoryScreenProps {
   onUpdateQuantity: (id: string, change: number) => void;
   onDeleteProduct: (id: string) => void;
   onAddProduct: () => void;
-  onAddSampleIngredients?: () => void;
 }
 
 export function InventoryScreen({
@@ -27,7 +26,6 @@ export function InventoryScreen({
   onUpdateQuantity,
   onDeleteProduct,
   onAddProduct,
-  onAddSampleIngredients,
 }: InventoryScreenProps) {
   const [activeCategory, setActiveCategory] = useState<
     'all' | 'fridge' | 'pantry' | 'freezer'
@@ -232,18 +230,6 @@ export function InventoryScreen({
         <Plus className="w-6 h-6" />
       </button>
 
-      {/* Quick Add Ingredients Button (only show if inventory is empty) */}
-      {products.length === 0 && onAddSampleIngredients && (
-        <div className="fixed bottom-40 left-1/2 transform -translate-x-1/2 z-10">
-          <button
-            onClick={onAddSampleIngredients}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-colors duration-300 flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Ajouter des ingrédients de base
-          </button>
-        </div>
-      )}
     </div>
   );
 }
