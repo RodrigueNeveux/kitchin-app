@@ -164,23 +164,44 @@ export async function getMealDbById(id: string): Promise<RecipeFromMealDb | null
   }
 }
 
-export async function getRandomMealDbRecipes(count = 10): Promise<RecipeFromMealDb[]> {
-  const recipes: RecipeFromMealDb[] = [];
+/** Récupère plusieurs recettes aléatoires en parallèle (rapide) */
+export async function getRandomMealDbRecipes(count = 25): Promise<RecipeFromMealDb[]> {
+  const promises = Array.from({ length: count }, () =>
+    fetch(`${BASE_URL}/random.php`).then((r) => r.json())
+  );
+  const results = await Promise.all(promises);
   const seen = new Set<string>();
-  for (let i = 0; i < count; i++) {
-    try {
-      const response = await fetch(`${BASE_URL}/random.php`);
-      const data = await response.json();
-      if (data.meals?.[0]) {
-        const meal = data.meals[0] as MealDbMeal;
-        if (!seen.has(meal.idMeal)) {
-          seen.add(meal.idMeal);
-          recipes.push(mealToRecipe(meal));
-        }
+  const recipes: RecipeFromMealDb[] = [];
+  for (const data of results) {
+    if (data?.meals?.[0]) {
+      const meal = data.meals[0] as MealDbMeal;
+      if (!seen.has(meal.idMeal)) {
+        seen.add(meal.idMeal);
+        recipes.push(mealToRecipe(meal));
       }
-    } catch {
-      break;
     }
   }
   return recipes;
+}
+
+/** Récupère des recettes par catégorie (Beef, Chicken, Dessert...) - variété garantie */
+export async function getMealDbByCategories(categories: string[]): Promise<RecipeFromMealDb[]> {
+  const promises = categories.map((cat) =>
+    fetch(`${BASE_URL}/filter.php?c=${encodeURIComponent(cat)}`).then((r) => r.json())
+  );
+  const results = await Promise.all(promises);
+  const ids = new Set<string>();
+  const idList: string[] = [];
+  for (const data of results) {
+    if (data?.meals) {
+      for (const m of data.meals) {
+        if (m?.idMeal && !ids.has(m.idMeal)) {
+          ids.add(m.idMeal);
+          idList.push(m.idMeal);
+        }
+      }
+    }
+  }
+  const details = await Promise.all(idList.slice(0, 30).map((id) => getMealDbById(id)));
+  return details.filter((r): r is RecipeFromMealDb => r !== null);
 }

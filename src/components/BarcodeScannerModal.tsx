@@ -119,7 +119,7 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overflow-x-hidden [&_#barcode-reader]:overflow-hidden [&_#barcode-reader_*]:overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-gray-900">Scanner un code-barres</h2>
@@ -139,8 +139,8 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
           {/* Camera View - Only show if camera is available */}
           {!cameraUnavailable && (
             <div className="space-y-4">
-              <div className="bg-gray-100 rounded-xl overflow-hidden" style={{ minHeight: '300px' }}>
-                <div id="barcode-reader" className="w-full" />
+              <div className="bg-gray-100 rounded-xl overflow-hidden" style={{ minHeight: '300px', maxHeight: '320px' }}>
+                <div id="barcode-reader" className="w-full overflow-hidden [&_video]:object-cover [&_*]:max-h-[300px]" style={{ overflow: 'hidden' }} />
                 {!isScanning && !error && (
                   <div className="flex flex-col items-center justify-center py-12 px-4">
                     <Camera className="w-16 h-16 text-gray-400 mb-4" />

@@ -114,7 +114,7 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header - Affiche le produit scanné ou le titre */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0">
+      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto gap-3">
           <button
             onClick={onBack}

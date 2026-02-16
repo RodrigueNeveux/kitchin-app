@@ -79,7 +79,7 @@ export function AuthScreen({ onAuth, onForgotPassword }: AuthScreenProps) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-6">
         <div className="max-w-md w-full">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+          <div className="bg-white dark:bg-stone-900/95 rounded-2xl shadow-xl dark:shadow-stone-950/50 border border-stone-100 dark:border-stone-800 p-8 transition-colors duration-300">
             <button
               onClick={() => { setShowForgotPassword(false); setError(''); setForgotSuccess(false); }}
               className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6"
@@ -139,7 +139,7 @@ export function AuthScreen({ onAuth, onForgotPassword }: AuthScreenProps) {
         </div>
 
         {/* Auth Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+        <div className="bg-white dark:bg-stone-900/95 rounded-2xl shadow-xl dark:shadow-stone-950/50 border border-stone-100 dark:border-stone-800 p-8 transition-colors duration-300">
           <h2 className="text-gray-800 dark:text-white text-center mb-6">
             {isSignup ? 'Créer un compte' : 'Se connecter'}
           </h2>

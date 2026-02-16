@@ -79,13 +79,13 @@ export function SettingsScreen({
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
+      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
@@ -100,7 +100,7 @@ export function SettingsScreen({
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* Appearance and Language Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors space-y-6">
+          <section className="bg-white dark:bg-stone-900/95 rounded-xl p-6 shadow-sm transition-colors duration-300 space-y-6">
             {/* Dark Mode */}
             <div>
                 <h3 className="text-gray-900 dark:text-white mb-4">
@@ -130,7 +130,7 @@ export function SettingsScreen({
             </div>
 
             {/* Language Selection */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-stone-200 dark:border-stone-700/50">
               <div className="flex items-center gap-3 mb-4">
                 <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
                 <h3 className="text-gray-900 dark:text-white">
@@ -144,7 +144,7 @@ export function SettingsScreen({
           </section>
 
           {/* Household Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
+          <section className="bg-white dark:bg-stone-900/95 rounded-xl p-6 shadow-sm transition-colors duration-300">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
               <h3 className="text-gray-900 dark:text-white">
@@ -170,7 +170,7 @@ export function SettingsScreen({
                   <button
                     onClick={handleSaveHouseholdName}
                     disabled={loading}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50"
                   >
                     <Check className="w-5 h-5" />
                   </button>
@@ -179,7 +179,7 @@ export function SettingsScreen({
                       setIsEditingHousehold(false);
                       setHouseholdName(household?.name || '');
                     }}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-300"
                   >
                     ✕
                   </button>
@@ -191,7 +191,7 @@ export function SettingsScreen({
                   </p>
                   <button
                     onClick={() => setIsEditingHousehold(true)}
-                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-300"
                   >
                     <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                   </button>
@@ -201,7 +201,7 @@ export function SettingsScreen({
           </section>
 
           {/* Account Section */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
+          <section className="bg-white dark:bg-stone-900/95 rounded-xl p-6 shadow-sm transition-colors duration-300">
             <div className="flex items-center gap-2 mb-4">
               <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h3 className="text-gray-900 dark:text-white">
@@ -227,7 +227,7 @@ export function SettingsScreen({
                   <button
                     onClick={handleSaveEmail}
                     disabled={loading}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50"
                   >
                     <Check className="w-5 h-5" />
                   </button>
@@ -236,7 +236,7 @@ export function SettingsScreen({
                       setIsEditingEmail(false);
                       setEmail(user?.email || '');
                     }}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-300"
                   >
                     ✕
                   </button>
@@ -248,7 +248,7 @@ export function SettingsScreen({
                   </p>
                   <button
                     onClick={() => setIsEditingEmail(true)}
-                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-300"
                   >
                     <Edit2 className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                   </button>
@@ -258,7 +258,7 @@ export function SettingsScreen({
           </section>
 
           {/* App Info */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
+          <section className="bg-white dark:bg-stone-900/95 rounded-xl p-6 shadow-sm transition-colors duration-300">
             <h3 className="text-gray-900 dark:text-white mb-3">
               À propos
             </h3>

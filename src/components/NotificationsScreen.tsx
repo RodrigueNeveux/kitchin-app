@@ -144,13 +144,13 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
+      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
@@ -177,7 +177,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
             <div className="flex justify-end">
               <button
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-300"
               >
                 <CheckCircle className="w-4 h-4" />
                 Tout marquer comme lu
@@ -233,7 +233,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
                         e.stopPropagation();
                         handleDeleteNotification(notification.id);
                       }}
-                      className="flex-shrink-0 p-1 hover:bg-white dark:hover:bg-gray-700 rounded transition-colors"
+                      className="flex-shrink-0 p-1 hover:bg-white dark:hover:bg-gray-700 rounded transition-colors duration-300"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4 text-gray-400" />

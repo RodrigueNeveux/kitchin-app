@@ -65,7 +65,6 @@
             "preview": "vite preview"
       },
       "description": "This is a code bundle for Kitch'In Mobile App Design. The original project is available at https://www.figma.com/design/g7seUeadTwQffBkDcdMxTY/Kitch-In-Mobile-App-Design.",
-      "main": "fix-imports.js",
       "repository": {
             "type": "git",
             "url": "git+https://github.com/RodrigueNeveux/Kitchin.git"

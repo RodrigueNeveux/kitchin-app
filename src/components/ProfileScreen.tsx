@@ -148,13 +148,13 @@ export function ProfileScreen({
   const inviteLink = inviteCode ? `https://kitchin.app/join/${inviteCode}` : '';
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
+      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
@@ -165,7 +165,7 @@ export function ProfileScreen({
             {onSettingsClick && (
               <button
                 onClick={onSettingsClick}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
                 title="Paramètres"
               >
                 <Settings className="w-6 h-6 text-gray-600 dark:text-gray-300" />
@@ -173,7 +173,7 @@ export function ProfileScreen({
             )}
             <button
               onClick={onLogout}
-              className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+              className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors duration-300"
               title="Se déconnecter"
             >
               <LogOut className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -186,7 +186,7 @@ export function ProfileScreen({
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-6">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* User Info */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
+          <section className="bg-white dark:bg-stone-900/95 rounded-xl p-6 shadow-sm transition-colors duration-300">
             <h3 className="text-gray-900 dark:text-white mb-4">
               Mes informations
             </h3>
@@ -211,7 +211,7 @@ export function ProfileScreen({
           </section>
 
           {/* Household Info */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-colors">
+          <section className="bg-white dark:bg-stone-900/95 rounded-xl p-6 shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-gray-900 dark:text-white">
                 Mon Foyer
@@ -239,7 +239,7 @@ export function ProfileScreen({
                     {members.map((member) => (
                       <div
                         key={member.id}
-                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors"
+                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-300"
                       >
                         <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                           <span className="text-green-700 dark:text-green-300">
@@ -265,7 +265,7 @@ export function ProfileScreen({
                           <button
                             onClick={() => handleRemoveMember(member.id, member.name)}
                             disabled={loading}
-                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
+                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors duration-300 disabled:opacity-50"
                             title="Retirer ce membre"
                           >
                             <UserX className="w-5 h-5 text-red-500 dark:text-red-400" />
@@ -281,17 +281,17 @@ export function ProfileScreen({
                   <button
                     onClick={handleCreateInvite}
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 cursor-pointer active:scale-95 transform"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50 cursor-pointer active:scale-95 transform"
                   >
                     <UserPlus className="w-5 h-5" />
                     Inviter un membre
                   </button>
 
                   {showInvite && inviteCode && (
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-5 rounded-xl border border-green-200 dark:border-green-700 shadow-sm transition-colors relative">
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-5 rounded-xl border border-green-200 dark:border-green-700 shadow-sm transition-colors duration-300 relative">
                       <button
                         onClick={() => { setShowInvite(false); setShowQRCode(false); }}
-                        className="absolute top-3 right-3 p-1 hover:bg-green-200 dark:hover:bg-green-700 rounded-full transition-colors"
+                        className="absolute top-3 right-3 p-1 hover:bg-green-200 dark:hover:bg-green-700 rounded-full transition-colors duration-300"
                         title="Fermer"
                       >
                         <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,10 +306,10 @@ export function ProfileScreen({
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          <code className="flex-1 bg-white dark:bg-gray-800 px-4 py-3 rounded-lg border-2 border-green-300 dark:border-green-600 text-green-700 dark:text-green-400 text-lg tracking-wider text-center select-all font-mono">
+                          <code className="flex-1 bg-white dark:bg-stone-900/95 px-4 py-3 rounded-lg border-2 border-green-300 dark:border-green-600 text-green-700 dark:text-green-400 text-lg tracking-wider text-center select-all font-mono">
                             {inviteCode.length > 9 ? `${inviteCode.slice(0, 9)}-${inviteCode.slice(9)}` : inviteCode}
                           </code>
-                          <button onClick={handleCopyCode} className="p-3 bg-white dark:bg-gray-800 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg border-2 border-green-300 dark:border-green-600 transition-colors" title="Copier le code">
+                          <button onClick={handleCopyCode} className="p-3 bg-white dark:bg-stone-900/95 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg border-2 border-green-300 dark:border-green-600 transition-colors duration-300" title="Copier le code">
                             {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-green-600" />}
                           </button>
                         </div>
@@ -319,14 +319,14 @@ export function ProfileScreen({
                               navigator.clipboard.writeText(inviteLink);
                               toast.success('Lien copié !', { duration: 2000 });
                             }}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-white dark:bg-stone-900/95 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors duration-300"
                           >
                             <Copy className="w-4 h-4 text-green-600" />
                             Copier le lien
                           </button>
                           <button
                             onClick={() => setShowQRCode(!showQRCode)}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-stone-900/95 rounded-lg border border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors duration-300"
                             title="Afficher le QR code"
                           >
                             <QrCode className="w-5 h-5 text-green-600" />
@@ -351,7 +351,7 @@ export function ProfileScreen({
                   {/* Rejoindre un autre foyer - pour ceux qui veulent changer */}
                   <button
                     onClick={() => setShowJoin(!showJoin)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-300"
                   >
                     <Users className="w-5 h-5" />
                     Rejoindre un autre foyer
@@ -365,9 +365,9 @@ export function ProfileScreen({
                           value={joinCode}
                           onChange={(e) => setJoinCode(e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase())}
                           placeholder="Code d'invitation"
-                          className="flex-1 px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white uppercase"
+                          className="flex-1 px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-stone-900/95 text-gray-900 dark:text-white uppercase"
                         />
-                        <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">Rejoindre</button>
+                        <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50">Rejoindre</button>
                       </div>
                     </div>
                   )}
@@ -377,7 +377,7 @@ export function ProfileScreen({
                     <button
                       onClick={handleLeaveHousehold}
                       disabled={loading}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-300"
                     >
                       <DoorOpen className="w-5 h-5" />
                       Quitter le foyer
@@ -395,7 +395,7 @@ export function ProfileScreen({
                 </div>
                 {onCreateHousehold && (
                   <>
-                    <button onClick={() => setShowCreate(!showCreate)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    <button onClick={() => setShowCreate(!showCreate)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-300">
                       <UserPlus className="w-5 h-5" />
                       Créer un foyer
                     </button>
@@ -406,14 +406,14 @@ export function ProfileScreen({
                           value={newHouseholdName}
                           onChange={(e) => setNewHouseholdName(e.target.value)}
                           placeholder="Nom du foyer (ex: Maison Dupont)"
-                          className="w-full px-4 py-2 border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                          className="w-full px-4 py-2 border border-green-200 dark:border-green-700 rounded-lg bg-white dark:bg-stone-900/95 text-gray-900 dark:text-white"
                         />
                         <button onClick={handleCreateHousehold} disabled={loading} className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">Créer</button>
                       </div>
                     )}
                   </>
                 )}
-                <button onClick={() => setShowJoin(!showJoin)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                <button onClick={() => setShowJoin(!showJoin)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-300">
                   <Users className="w-5 h-5" />
                   Rejoindre un foyer avec un code
                 </button>
@@ -426,9 +426,9 @@ export function ProfileScreen({
                         value={joinCode}
                         onChange={(e) => setJoinCode(e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase())}
                         placeholder="Code d'invitation"
-                        className="flex-1 px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white uppercase"
+                        className="flex-1 px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-stone-900/95 text-gray-900 dark:text-white uppercase"
                       />
-                      <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">Rejoindre</button>
+                      <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50">Rejoindre</button>
                     </div>
                   </div>
                 )}

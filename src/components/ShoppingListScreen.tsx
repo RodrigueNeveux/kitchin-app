@@ -169,13 +169,13 @@ export function ShoppingListScreen({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors pb-16 md:pb-0">
+    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 transition-colors duration-300 pb-16 md:pb-0">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
+      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
@@ -189,7 +189,7 @@ export function ShoppingListScreen({
           </div>
           <button 
             onClick={() => setShowSuggestions(!showSuggestions)}
-            className={`p-2 rounded-full transition-colors ${
+            className={`p-2 rounded-full transition-colors duration-300 ${
               showSuggestions 
                 ? 'bg-green-100 dark:bg-green-900/30' 
                 : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -206,7 +206,7 @@ export function ShoppingListScreen({
 
       {/* Progress Bar */}
       {totalItems > 0 && (
-        <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-stone-900/95 px-6 py-3 border-b border-stone-200 dark:border-stone-700/50">
           <div className="max-w-md md:max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -227,7 +227,7 @@ export function ShoppingListScreen({
       )}
 
       {/* List Tabs */}
-      <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors">
+      <div className="bg-white dark:bg-stone-900/95 px-6 py-3 border-b border-stone-200 dark:border-stone-700/50 flex-shrink-0 transition-colors duration-300">
         <div className="flex gap-2 max-w-md md:max-w-4xl mx-auto overflow-x-auto">
           {listConfigs.map((list) => {
             const stats = getListStats(list.id);
@@ -277,7 +277,7 @@ export function ShoppingListScreen({
                 <button
                   key={idx}
                   onClick={() => handleQuickAdd(suggestion.name)}
-                  className="px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors shadow-sm"
+                  className="px-3 py-1.5 bg-white dark:bg-stone-900/95 rounded-full text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors duration-300 shadow-sm"
                 >
                   + {suggestion.name}
                 </button>
@@ -288,7 +288,7 @@ export function ShoppingListScreen({
       )}
 
       {/* Shopping Items List */}
-      <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
+      <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 pb-24 sm:pb-8">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* Unchecked Items - Grouped by Category */}
           {Object.entries(itemsByCategory).map(([categoryKey, categoryItems]) => (
@@ -302,7 +302,7 @@ export function ShoppingListScreen({
               {categoryItems.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm flex items-center gap-3 transition-all hover:shadow-md group"
+                  className="bg-white dark:bg-stone-900/95 rounded-xl p-4 shadow-sm flex items-center gap-3 transition-all hover:shadow-md group"
                 >
                   <Checkbox
                     checked={item.checked}
@@ -321,7 +321,7 @@ export function ShoppingListScreen({
                   {/* Move to other list button */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                      <button className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors duration-300 opacity-0 group-hover:opacity-100">
                         <MoveRight className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                       </button>
                     </DropdownMenuTrigger>
@@ -341,7 +341,7 @@ export function ShoppingListScreen({
 
                   <button
                     onClick={() => onDeleteItem(activeList, item.id)}
-                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors duration-300 opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
                   </button>
@@ -364,7 +364,7 @@ export function ShoppingListScreen({
 
           {/* Checked Items */}
           {checkedItems.length > 0 && (
-            <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="space-y-2 pt-4 border-t border-stone-200 dark:border-stone-700/50">
               <div className="flex items-center justify-between px-2 mb-3">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-600" />
@@ -398,7 +398,7 @@ export function ShoppingListScreen({
                   </div>
                   <button
                     onClick={() => onDeleteItem(activeList, item.id)}
-                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors duration-300"
                   >
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
@@ -411,7 +411,7 @@ export function ShoppingListScreen({
 
       {/* Add Item Section - fixé en bas sur mobile, intégré sur desktop */}
       <div
-        className="flex-shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_12px_rgba(0,0,0,0.25)] sm:shadow-none transition-colors"
+        className="flex-shrink-0 bg-white dark:bg-stone-900/95 border-t border-stone-200 dark:border-stone-700/50 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)] sm:shadow-none transition-colors duration-300"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
       >
         <div className="max-w-md md:max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -442,7 +442,7 @@ export function ShoppingListScreen({
               />
               <button
                 onClick={() => handleAddItem()}
-                className="flex-1 sm:flex-none px-5 py-3 sm:py-2.5 min-h-[44px] min-w-[44px] bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                className="flex-1 sm:flex-none px-5 py-3 sm:py-2.5 min-h-[44px] min-w-[44px] bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-xl transition-colors duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 aria-label="Ajouter l'article"
               >
                 <Plus className="w-5 h-5 sm:w-5 sm:h-5" />

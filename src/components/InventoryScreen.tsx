@@ -58,13 +58,13 @@ export function InventoryScreen({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm flex-shrink-0 transition-colors">
+      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
           </button>
@@ -78,7 +78,7 @@ export function InventoryScreen({
                 setSearchQuery('');
               }
             }}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
           >
             {showSearch ? (
               <X className="w-6 h-6 text-gray-600 dark:text-gray-300" />
@@ -91,7 +91,7 @@ export function InventoryScreen({
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors">
+        <div className="bg-white dark:bg-stone-900/95 px-6 py-3 border-b border-stone-200 dark:border-stone-700/50 flex-shrink-0 transition-colors duration-300">
           <div className="max-w-md md:max-w-4xl mx-auto">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
@@ -106,7 +106,7 @@ export function InventoryScreen({
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors duration-300"
                 >
                   <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </button>
@@ -117,13 +117,13 @@ export function InventoryScreen({
       )}
 
       {/* Category Filters */}
-      <div className="bg-white dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 transition-colors">
+      <div className="bg-white dark:bg-stone-900/95 px-6 py-3 border-b border-stone-200 dark:border-stone-700/50 flex-shrink-0 transition-colors duration-300">
         <div className="flex gap-2 max-w-md md:max-w-4xl mx-auto overflow-x-auto">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id as any)}
-              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors duration-300 ${
                 activeCategory === category.id
                   ? 'bg-green-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -136,7 +136,7 @@ export function InventoryScreen({
       </div>
 
       {/* Product List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 pb-32">
+      <div className="flex-1 overflow-y-auto px-6 py-4 pb-40">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-3">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
@@ -150,7 +150,7 @@ export function InventoryScreen({
             filteredProducts.map((product) => (
             <div
               key={product.id}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm transition-colors"
+              className="bg-white dark:bg-stone-900/95 rounded-xl p-4 shadow-sm transition-colors duration-300"
             >
               <div className="flex items-start gap-3">
                 {/* Product Image */}
@@ -198,21 +198,21 @@ export function InventoryScreen({
                   <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                     <button
                       onClick={() => onUpdateQuantity(product.id, -1)}
-                      className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
+                      className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors duration-300"
                       disabled={product.quantity <= 1}
                     >
                       <Minus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                     </button>
                     <button
                       onClick={() => onUpdateQuantity(product.id, 1)}
-                      className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors"
+                      className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded transition-colors duration-300"
                     >
                       <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                     </button>
                   </div>
                   <button
                     onClick={() => onDeleteProduct(product.id)}
-                    className="p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                    className="p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors duration-300"
                   >
                     <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
                   </button>
@@ -227,7 +227,7 @@ export function InventoryScreen({
       {/* Floating Add Button */}
       <button 
         onClick={onAddProduct}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-24 right-6 w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors duration-300"
       >
         <Plus className="w-6 h-6" />
       </button>
@@ -237,7 +237,7 @@ export function InventoryScreen({
         <div className="fixed bottom-40 left-1/2 transform -translate-x-1/2 z-10">
           <button
             onClick={onAddSampleIngredients}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-colors flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-colors duration-300 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Ajouter des ingrédients de base

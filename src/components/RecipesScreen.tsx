@@ -72,7 +72,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'can-make' | 'missing-few'>('all');
-  const [useInventory, setUseInventory] = useState(true);
+  const [useInventory, setUseInventory] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('Toutes');
 
   const apiConfigured = isApiConfigured();
@@ -127,11 +127,11 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     }
   };
 
-  // Charger recettes complètes : françaises + TheMealDB (gratuit, +300 recettes)
+  // Charger recettes : françaises + TheMealDB en parallèle (rapide, varié)
   const loadCompleteRecipes = async (): Promise<Recipe[]> => {
     const [french, mealDb] = await Promise.all([
       getFrenchRecipes(),
-      getRandomMealDbRecipes(10),
+      getRandomMealDbRecipes(30),
     ]);
     const mealDbAsRecipe: Recipe[] = mealDb.map(r => ({ ...r }));
     const seen = new Set(french.map(r => r.id));
@@ -139,18 +139,14 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     return [...french, ...unique];
   };
 
-  // Charger les recettes au montage et quand on change de source
+  // Charger les recettes au montage : françaises + TheMealDB (rapide, pas Spoonacular)
   useEffect(() => {
     const loadInitialRecipes = async () => {
       setLoading(true);
       try {
-        if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
-          await loadRecipesFromInventory();
-        } else {
-          const allRecipes = await loadCompleteRecipes();
-          setRecipes(allRecipes);
-          setBaseRecipes(allRecipes);
-        }
+        const allRecipes = await loadCompleteRecipes();
+        setRecipes(allRecipes);
+        setBaseRecipes(allRecipes);
       } catch (error) {
         console.error('Erreur lors du chargement initial:', error);
         const fallback = await getFrenchRecipes();
@@ -166,9 +162,15 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
 
   useEffect(() => {
     if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
+      setLoading(true);
       loadRecipesFromInventory();
     } else if (!useInventory) {
-      loadCompleteRecipes().then(r => { setRecipes(r); setBaseRecipes(r); });
+      setLoading(true);
+      loadCompleteRecipes().then(r => {
+        setRecipes(r);
+        setBaseRecipes(r);
+        setLoading(false);
+      }).catch(() => setLoading(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useInventory, apiConfigured]);
@@ -192,8 +194,8 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
       const search = async () => {
       try {
         const [mealDbRecipes, spoonacularData] = await Promise.all([
-          searchMealDbRecipes(q, 15),
-          apiConfigured ? searchRecipes(q, 15).then(d => d.results).catch(() => []) : Promise.resolve([]),
+          searchMealDbRecipes(q, 20),
+          apiConfigured ? searchRecipes(q, 10).then(d => d.results).catch(() => []) : Promise.resolve([]),
         ]);
         if (cancelled) return;
         const mealDbAsRecipe: Recipe[] = mealDbRecipes.map(r => ({ ...r }));
@@ -327,9 +329,9 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
   }, [recipesWithAvailability]);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950">
                   {/* Header */}
-                  <header className="bg-white dark:bg-gray-800 px-6 py-4 shadow-sm md:sticky md:top-0 md:z-10">
+                  <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm md:sticky md:top-0 md:z-10">
                     <div className="max-w-4xl mx-auto">
                       <h1 className="text-center text-gray-900 dark:text-white mb-4">
                         🍳 Recettes
@@ -342,7 +344,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                           <div className="flex gap-2">
                             <button
                               onClick={() => setUseInventory(true)}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                                 useInventory
                                   ? 'bg-green-600 text-white shadow'
                                   : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-500'
@@ -352,7 +354,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                             </button>
                             <button
                               onClick={() => setUseInventory(false)}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                                 !useInventory
                                   ? 'bg-green-600 text-white shadow'
                                   : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-500'
@@ -391,7 +393,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                             <button
                               key={cat}
                               onClick={() => setCategoryFilter(cat)}
-                              className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all ${
+                              className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all duration-300 ${
                                 categoryFilter === cat
                                   ? 'bg-green-600 text-white'
                                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -407,7 +409,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                         <div className="flex gap-2 overflow-x-auto pb-2">
                           <button
                             onClick={() => setFilter('all')}
-                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
                               filter === 'all'
                                 ? 'bg-green-600 text-white shadow-md'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -417,7 +419,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                           </button>
                           <button
                             onClick={() => setFilter('can-make')}
-                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
                               filter === 'can-make'
                                 ? 'bg-green-600 text-white shadow-md'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -427,7 +429,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                           </button>
                           <button
                             onClick={() => setFilter('missing-few')}
-                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
                               filter === 'missing-few'
                                 ? 'bg-green-600 text-white shadow-md'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -483,7 +485,7 @@ function RecipeCard({ recipe, onClick, showIngredientMatch }: RecipeCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group"
+      className="bg-white dark:bg-stone-900/95 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden">

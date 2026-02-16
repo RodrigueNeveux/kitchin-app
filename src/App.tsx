@@ -39,10 +39,10 @@ const NotificationsScreen = lazy(() =>
 
 // Composant de chargement
 const LoadingScreen = () => (
-  <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+  <div className="h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
     <div className="text-center">
-      <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p className="text-gray-600 dark:text-gray-300">Chargement...</p>
+      <div className="w-12 h-12 border-4 border-green-600 dark:border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-stone-600 dark:text-stone-400">Chargement...</p>
     </div>
   </div>
 );
@@ -91,12 +91,16 @@ function AppContent() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  // Apply dark mode to document
+  // Apply dark mode to document + theme-color pour la barre de statut
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#0c0a09');
     } else {
       document.documentElement.classList.remove('dark');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#16a34a');
     }
   }, [darkMode]);
 
@@ -599,14 +603,15 @@ function AppContent() {
         daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
 
-      // Ajout via Firebase
-      if (!user?.householdId) {
-        throw new Error('Vous devez être membre d\'un foyer pour ajouter des produits');
+      // Ajout via Firebase (user.householdId ou household.id en secours)
+      const householdId = user?.householdId || household?.id;
+      if (!householdId) {
+        throw new Error('Vous devez rejoindre ou créer un foyer pour ajouter des produits');
       }
       
       const productId = await firebaseApi.addProduct({
         ...productData,
-        householdId: user.householdId,
+        householdId,
       });
       
       const newProduct = {
@@ -622,7 +627,7 @@ function AppContent() {
       toast.error('Erreur lors de l\'ajout du produit');
       throw error;
     }
-  }, []);
+  }, [user, household]);
 
   const handleUpdateHouseholdName = useCallback(async (name: string) => {
     try {
@@ -765,7 +770,7 @@ function AppContent() {
   }
 
   return (
-    <div className={`min-h-screen w-full md:pl-24 ${darkMode ? 'bg-gray-900' : 'bg-white'} relative`}>
+    <div className={`min-h-screen w-full md:pl-24 transition-colors duration-300 ${darkMode ? 'bg-stone-950' : 'bg-stone-50'} relative`}>
       {activeScreen === 'home' && (
         <HomeScreen
           expiringProducts={expiringProducts}

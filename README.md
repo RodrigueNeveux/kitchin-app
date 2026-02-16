@@ -1,11 +1,14 @@
+# Kitch'In
 
-  # Kitch'In Mobile App Design
+Application de gestion de cuisine : inventaire, listes de courses, recettes.
 
-  This is a code bundle for Kitch'In Mobile App Design. The original project is available at https://www.figma.com/design/g7seUeadTwQffBkDcdMxTY/Kitch-In-Mobile-App-Design.
+## Développement local
 
-  ## Running the code
+```bash
+npm install
+npm run dev
+```
 
-  Run `npm i` to install the dependencies.
+## Déploiement
 
-  Run `npm run dev` to start the development server.
-  
+Voir **[DEPLOIEMENT.md](DEPLOIEMENT.md)** pour déployer sur Netlify ou Vercel.
