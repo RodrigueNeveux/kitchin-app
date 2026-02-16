@@ -124,39 +124,39 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'expired':
-        return <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />;
+        return <AlertTriangle className="w-5 h-5 text-red-600" />;
       case 'expiring_soon':
-        return <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />;
+        return <Clock className="w-5 h-5 text-orange-600" />;
       case 'low_stock':
-        return <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+        return <Bell className="w-5 h-5 text-blue-600" />;
     }
   };
 
   const getNotificationColor = (type: Notification['type']) => {
     switch (type) {
       case 'expired':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+        return 'bg-red-100 border-red-300';
       case 'expiring_soon':
-        return 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800';
+        return 'bg-orange-100 border-orange-300';
       case 'low_stock':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return 'bg-blue-100 border-blue-300';
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
+    <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
+      <header className="bg-stone-100 px-6 py-4 shadow-sm border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+            className="p-2 rounded-full hover:bg-stone-300 transition-colors duration-300"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            <ArrowLeft className="w-6 h-6 text-stone-600" />
           </button>
           <div className="flex items-center gap-2">
-            <Bell className="w-6 h-6 text-green-600 dark:text-green-400" />
-            <h1 className="text-gray-900 dark:text-white">
+            <Bell className="w-6 h-6 text-green-600" />
+            <h1 className="text-stone-800">
               Notifications
             </h1>
             {unreadCount > 0 && (
@@ -177,7 +177,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
             <div className="flex justify-end">
               <button
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors duration-300"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-green-100 rounded-lg transition-colors duration-300"
               >
                 <CheckCircle className="w-4 h-4" />
                 Tout marquer comme lu
@@ -188,13 +188,13 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
           {/* Notifications List */}
           {notifications.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-green-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-gray-900 dark:text-white mb-2">
+              <h3 className="text-stone-800 mb-2">
                 Aucune notification
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-stone-500 text-sm">
                 Tous vos produits sont en bon état !
               </p>
             </div>
@@ -213,7 +213,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${notification.read ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                      <p className={`text-sm ${notification.read ? 'text-stone-500' : 'text-stone-800'}`}>
                         {notification.message}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
@@ -222,7 +222,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
                             e.stopPropagation();
                             onNavigateToInventory();
                           }}
-                          className="text-xs text-green-600 dark:text-green-400 hover:underline"
+                          className="text-xs text-green-600 hover:underline"
                         >
                           Voir dans l'inventaire
                         </button>
@@ -233,7 +233,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
                         e.stopPropagation();
                         handleDeleteNotification(notification.id);
                       }}
-                      className="flex-shrink-0 p-1 hover:bg-white dark:hover:bg-gray-700 rounded transition-colors duration-300"
+                      className="flex-shrink-0 p-1 hover:bg-stone-200 rounded transition-colors duration-300"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4 text-gray-400" />
@@ -246,15 +246,15 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
 
           {/* Tips */}
           {notifications.length > 0 && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mt-6">
+            <div className="bg-blue-100 border border-blue-300 rounded-xl p-4 mt-6">
               <div className="flex items-start gap-3">
                 <div className="w-5 h-5 flex-shrink-0 mt-0.5">
-                  <svg className="w-full h-full text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-full h-full text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-blue-900 dark:text-blue-300">
+                  <p className="text-sm text-blue-900">
                     <strong>Conseil :</strong> Consultez la section Recettes pour trouver des idées pour utiliser vos produits avant qu'ils ne périment !
                   </p>
                 </div>

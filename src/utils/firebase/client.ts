@@ -9,6 +9,8 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
+// Langue des emails (réinitialisation mot de passe, vérification, etc.)
+auth.languageCode = 'fr';
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 

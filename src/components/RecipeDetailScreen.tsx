@@ -18,10 +18,9 @@ interface RecipeDetailScreenProps {
   onBack: () => void;
   availableProducts?: Product[];
   onAddMissingToShoppingList?: (items: { item: string; quantity: string }[]) => void;
-  darkMode?: boolean;
 }
 
-export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onAddMissingToShoppingList, darkMode = false }: RecipeDetailScreenProps) {
+export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onAddMissingToShoppingList }: RecipeDetailScreenProps) {
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [detailedRecipe, setDetailedRecipe] = useState<RecipeDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -227,7 +226,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
   };
 
   return (
-    <div className={`flex flex-col h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="flex flex-col h-screen bg-stone-200">
       {/* Header Image */}
       <div className="relative h-64 flex-shrink-0">
         <ImageWithFallback
@@ -237,14 +236,14 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
         />
         <button
           onClick={onBack}
-          className={`absolute top-4 left-4 p-2 rounded-full shadow-lg transition-colors ${darkMode ? 'bg-gray-800/90 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`}
+          className="absolute top-4 left-4 p-2 rounded-full shadow-lg bg-stone-100 hover:bg-stone-200 transition-colors"
         >
-          <ArrowLeft className={`w-6 h-6 ${darkMode ? 'text-gray-200' : 'text-gray-600'}`} />
+          <ArrowLeft className="w-6 h-6 text-stone-600" />
         </button>
         <div className="absolute bottom-4 left-4 right-4">
-          <div className={`${darkMode ? 'bg-gray-900/95' : 'bg-white/95'} backdrop-blur-sm rounded-2xl p-4`}>
+          <div className="bg-stone-100/95 backdrop-blur-sm rounded-2xl p-4 border border-stone-300">
             <div className="flex items-start justify-between mb-2">
-              <h1 className={`flex-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className="flex-1 text-stone-800">
                 {recipe.name}
               </h1>
               <span
@@ -255,7 +254,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
                 {recipe.difficulty}
               </span>
             </div>
-            <div className={`flex items-center gap-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <div className="flex items-center gap-4 text-sm text-stone-600">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 <span>{recipe.prepTime + recipe.cookTime} min</span>
@@ -290,26 +289,26 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
           )}
 
           {/* Time Details */}
-          <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h2 className={`mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className="rounded-2xl p-4 bg-stone-100 border border-stone-300">
+            <h2 className="mb-3 text-stone-800">
               Temps de préparation
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Préparation</p>
-                <p className={darkMode ? 'text-white' : 'text-gray-900'}>{recipe.prepTime} min</p>
+                <p className="text-sm text-stone-600">Préparation</p>
+                <p className="text-stone-800">{recipe.prepTime} min</p>
               </div>
               <div>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cuisson</p>
-                <p className={darkMode ? 'text-white' : 'text-gray-900'}>{recipe.cookTime} min</p>
+                <p className="text-sm text-stone-600">Cuisson</p>
+                <p className="text-stone-800">{recipe.cookTime} min</p>
               </div>
             </div>
           </div>
 
           {/* Ingredients */}
-          <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className="rounded-2xl p-4 bg-stone-100 border border-stone-300">
             <div className="flex items-center justify-between mb-3">
-              <h2 className={darkMode ? 'text-white' : 'text-gray-900'}>
+              <h2 className="text-stone-800">
                 Ingrédients
               </h2>
               {translating && (
@@ -324,13 +323,13 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
                   {ingredient.isAvailable ? (
                     <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                   ) : (
-                    <span className={`mt-1 flex-shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                    <span className="mt-1 flex-shrink-0 text-stone-500">•</span>
                   )}
                   <div className="flex-1">
-                    <span className={ingredient.isAvailable ? (darkMode ? 'text-white' : 'text-gray-900') : (darkMode ? 'text-gray-300' : 'text-gray-600')}>
+                    <span className={ingredient.isAvailable ? 'text-stone-800' : 'text-stone-600'}>
                       {ingredient.item}
                     </span>
-                    <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <span className="ml-2 text-stone-500">
                       - {ingredient.quantity}
                     </span>
                     {ingredient.isAvailable && (
@@ -343,9 +342,9 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
           </div>
 
           {/* Steps */}
-          <div className={`rounded-2xl p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className="rounded-2xl p-4 bg-stone-100 border border-stone-300">
             <div className="flex items-center justify-between mb-3">
-              <h2 className={darkMode ? 'text-white' : 'text-gray-900'}>
+              <h2 className="text-stone-800">
                 Étapes de préparation
               </h2>
               {translating && (
@@ -360,7 +359,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
                 <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
               </div>
             ) : steps.length === 0 ? (
-              <p className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className="text-center py-4 text-stone-500">
                 Aucune étape disponible pour cette recette.
               </p>
             ) : (
@@ -376,13 +375,13 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
                         className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                           checkedSteps.has(index)
                             ? 'bg-green-600'
-                            : darkMode ? 'bg-gray-600' : 'bg-gray-200'
+                            : 'bg-stone-300'
                         }`}
                       >
                         {checkedSteps.has(index) ? (
                           <CheckCircle2 className="w-4 h-4 text-white" />
                         ) : (
-                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          <span className="text-sm text-stone-600">
                             {index + 1}
                           </span>
                         )}
@@ -391,7 +390,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
                         className={`flex-1 transition-opacity ${
                           checkedSteps.has(index)
                             ? 'text-gray-500 line-through'
-                            : darkMode ? 'text-gray-300' : 'text-gray-700'
+                            : 'text-stone-700'
                         }`}
                       >
                         {step}
@@ -405,7 +404,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
 
           {/* Progress */}
           {checkedSteps.size > 0 && steps.length > 0 && (
-            <div className="bg-green-50 rounded-2xl p-4 border border-green-200">
+            <div className="bg-green-100 rounded-2xl p-4 border border-green-300">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-green-800">Progression</p>
                 <p className="text-green-600">

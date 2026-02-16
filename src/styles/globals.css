@@ -1,73 +1,38 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    /* Mode clair : tons chauds, doux, inspirés cuisine */
-    --background: 40 10% 98%;
-    --foreground: 24 10% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 24 10% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 24 10% 10%;
-    --primary: 142 71% 45%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 40 10% 94%;
-    --secondary-foreground: 24 10% 15%;
-    --muted: 40 8% 95%;
-    --muted-foreground: 25 5% 45%;
-    --accent: 142 40% 95%;
-    --accent-foreground: 142 71% 30%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 40 10% 90%;
-    --input: 40 10% 90%;
-    --ring: 142 71% 40%;
-    --radius: 0.75rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-  }
-
-  .dark {
-    /* Mode sombre : fond profond et doux, contraste agréable */
-    --background: 24 10% 6%;
-    --foreground: 40 10% 96%;
-    --card: 24 10% 10%;
-    --card-foreground: 40 10% 96%;
-    --popover: 24 10% 10%;
-    --popover-foreground: 40 10% 96%;
-    --primary: 142 71% 50%;
-    --primary-foreground: 24 10% 6%;
-    --secondary: 24 10% 14%;
-    --secondary-foreground: 40 10% 90%;
-    --muted: 24 10% 14%;
-    --muted-foreground: 40 5% 60%;
-    --accent: 142 40% 20%;
-    --accent-foreground: 142 71% 65%;
-    --destructive: 0 62% 45%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 24 10% 18%;
-    --input: 24 10% 18%;
-    --ring: 142 71% 45%;
-  }
+/* Thème unique équilibré Kitch'In - ni trop clair ni trop sombre */
+:root {
+  --kitchin-bg: #e7e5e4;      /* stone-200 */
+  --kitchin-bg-card: #f5f5f4;  /* stone-100 */
+  --kitchin-text: #292524;     /* stone-800 */
+  --kitchin-text-muted: #57534e; /* stone-600 */
+  --kitchin-border: #d6d3d1;   /* stone-300 */
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    @apply transition-colors duration-300;
-  }
+html {
+  min-height: 100%;
 }
 
-/* Animations personnalisées pour Kitch'In */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  min-width: 100%;
+}
+
+* {
+  border-color: var(--kitchin-border);
+}
+
+body {
+  background-color: var(--kitchin-bg) !important;
+  color: var(--kitchin-text) !important;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Animations */
 @keyframes bell-ring {
   0% { transform: rotate(0); }
   10% { transform: rotate(15deg); }
@@ -80,45 +45,11 @@
   100% { transform: rotate(0); }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
-}
-
 .animate-bell-ring {
   animation: bell-ring 1s ease-in-out;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Styles spécifiques pour Kitch'In */
-.kitchin-card {
-  @apply bg-white dark:bg-stone-800/80 rounded-xl shadow-sm dark:shadow-none border border-stone-100 dark:border-stone-700/50 p-4 transition-colors;
-}
-
-.kitchin-button-primary {
-  @apply bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 text-white rounded-lg px-4 py-2 transition-all duration-200;
-}
-
-.kitchin-button-secondary {
-  @apply bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-200 rounded-lg px-4 py-2 transition-colors;
-}
-
-.expiry-alert {
-  @apply bg-red-50 dark:bg-red-950/40 border-l-4 border-red-500 dark:border-red-400 p-3 rounded;
-}
-
-.expiry-warning {
-  @apply bg-orange-50 dark:bg-orange-950/40 border-l-4 border-orange-500 dark:border-orange-400 p-3 rounded;
-}
-
-.expiry-good {
-  @apply bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 dark:border-green-400 p-3 rounded;
-}
-
-/* Fix scroll infini du scanner code-barres (html5-qrcode) */
+/* Fix scanner code-barres */
 #barcode-reader,
 #barcode-reader * {
   overflow: hidden !important;
@@ -126,13 +57,7 @@
 }
 #barcode-reader {
   height: 300px !important;
-  position: relative !important;
 }
 #qr-shaded-region {
   overflow: hidden !important;
-}
-
-/* Transitions fluides pour le changement de thème */
-.theme-transition {
-  @apply transition-colors duration-300 ease-in-out;
 }

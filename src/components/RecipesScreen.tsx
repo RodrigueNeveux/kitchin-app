@@ -2,7 +2,7 @@ import { Clock, Users, ChefHat, CheckCircle2, Search, Sparkles, AlertCircle, Loa
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { findRecipesByIngredients, searchRecipes, isApiConfigured } from '../utils/spoonacularApi';
-import { searchMealDbRecipes, getRandomMealDbRecipes } from '../utils/mealDbApi';
+import { searchMealDbRecipes } from '../utils/mealDbApi';
 import { translateText } from '../utils/translationApi';
 import { toast } from "sonner";
 
@@ -72,7 +72,6 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'can-make' | 'missing-few'>('all');
-  const [useInventory, setUseInventory] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('Toutes');
 
   const apiConfigured = isApiConfigured();
@@ -127,53 +126,18 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     }
   };
 
-  // Charger recettes : françaises + TheMealDB en parallèle (rapide, varié)
-  const loadCompleteRecipes = async (): Promise<Recipe[]> => {
-    const [french, mealDb] = await Promise.all([
-      getFrenchRecipes(),
-      getRandomMealDbRecipes(30),
-    ]);
-    const mealDbAsRecipe: Recipe[] = mealDb.map(r => ({ ...r }));
-    const seen = new Set(french.map(r => r.id));
-    const unique = mealDbAsRecipe.filter(r => !seen.has(r.id));
-    return [...french, ...unique];
-  };
-
-  // Charger les recettes au montage : françaises + TheMealDB (rapide, pas Spoonacular)
+  // Charger les recettes : uniquement selon l'inventaire
   useEffect(() => {
-    const loadInitialRecipes = async () => {
-      setLoading(true);
-      try {
-        const allRecipes = await loadCompleteRecipes();
-        setRecipes(allRecipes);
-        setBaseRecipes(allRecipes);
-      } catch (error) {
-        console.error('Erreur lors du chargement initial:', error);
-        const fallback = await getFrenchRecipes();
-        setRecipes(fallback);
-        setBaseRecipes(fallback);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadInitialRecipes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (useInventory && inventoryIngredients.length > 0 && apiConfigured) {
+    if (inventoryIngredients.length > 0 && apiConfigured) {
       setLoading(true);
       loadRecipesFromInventory();
-    } else if (!useInventory) {
-      setLoading(true);
-      loadCompleteRecipes().then(r => {
-        setRecipes(r);
-        setBaseRecipes(r);
-        setLoading(false);
-      }).catch(() => setLoading(false));
+    } else {
+      setRecipes([]);
+      setBaseRecipes([]);
+      setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [useInventory, apiConfigured]);
+  }, [inventoryIngredients.length, apiConfigured]);
 
   const [baseRecipes, setBaseRecipes] = useState<Recipe[]>([]);
   const baseRecipesRef = useRef<Recipe[]>([]);
@@ -241,54 +205,8 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
     };
   }, [searchQuery, apiConfigured]);
 
-  // Normalize text for matching
-  const normalizeText = (text: string) => {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/s$/, '')
-      .trim();
-  };
-
-  // Calculer les ingrédients disponibles et manquants pour chaque recette locale
-  const recipesWithAvailability = useMemo(() => {
-    if (useInventory) {
-      return recipes; // Les recettes API ont déjà ces infos
-    }
-
-    return recipes.map(recipe => {
-      const usedIngredients: string[] = [];
-      const missedIngredients: string[] = [];
-
-      recipe.ingredients.forEach(ingredient => {
-        const normalizedIngredient = normalizeText(ingredient.item);
-        const isAvailable = availableProducts.some(product => {
-          const normalizedProduct = normalizeText(product.name);
-          return (
-            normalizedIngredient.includes(normalizedProduct) ||
-            normalizedProduct.includes(normalizedIngredient) ||
-            (normalizedIngredient.includes('pate') && normalizedProduct.includes('spaghetti')) ||
-            (normalizedIngredient.includes('spaghetti') && normalizedProduct.includes('pate'))
-          );
-        });
-
-        if (isAvailable) {
-          usedIngredients.push(ingredient.item);
-        } else {
-          missedIngredients.push(ingredient.item);
-        }
-      });
-
-      return {
-        ...recipe,
-        usedIngredients,
-        missedIngredients,
-        usedIngredientCount: usedIngredients.length,
-        missedIngredientCount: missedIngredients.length,
-      };
-    });
-  }, [recipes, availableProducts, useInventory]);
+  // Les recettes sont basées sur l'inventaire (API Spoonacular) avec usedIngredientCount, missedIngredientCount
+  const recipesWithAvailability = useMemo(() => recipes, [recipes]);
 
   // Filtrer les recettes selon la recherche, catégorie et filtres
   const filteredRecipes = useMemo(() => {
@@ -329,65 +247,36 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
   }, [recipesWithAvailability]);
 
   return (
-    <div className="flex flex-col h-screen bg-stone-50 dark:bg-stone-950">
+    <div className="flex flex-col h-screen bg-stone-200">
                   {/* Header */}
-                  <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm md:sticky md:top-0 md:z-10">
+                  <header className="bg-stone-100 px-6 py-4 shadow-sm border-b border-stone-300 md:sticky md:top-0 md:z-10">
                     <div className="max-w-4xl mx-auto">
-                      <h1 className="text-center text-gray-900 dark:text-white mb-4">
+                      <h1 className="text-center text-stone-800 mb-4">
                         🍳 Recettes
                       </h1>
             
-                      {/* Toggle Inventaire / Recettes complètes (françaises + TheMealDB) */}
-                      {apiConfigured && availableProducts.length > 0 && (
-                        <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Source des recettes</p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setUseInventory(true)}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${
-                                useInventory
-                                  ? 'bg-green-600 text-white shadow'
-                                  : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-500'
-                              }`}
-                            >
-                              Selon mon inventaire (Spoonacular)
-                            </button>
-                            <button
-                              onClick={() => setUseInventory(false)}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${
-                                !useInventory
-                                  ? 'bg-green-600 text-white shadow'
-                                  : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-500'
-                              }`}
-                            >
-                              Toutes les recettes
-                            </button>
-                          </div>
-                        </div>
-                      )}
-            
                       {/* Search Bar */}
                       <div className="relative mb-4">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-500" />
                           <input
                             type="text"
                             placeholder="Rechercher une recette..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full pl-10 pr-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-stone-50 text-stone-800"
                           />
                         </div>
             
                         {/* État de la recherche */}
                         {(loading || searchLoading) && (
-                          <div className="w-full mb-4 px-4 py-3 rounded-lg flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700">
+                          <div className="w-full mb-4 px-4 py-3 rounded-lg flex items-center justify-center gap-2 bg-stone-200">
                             <Loader2 className="w-5 h-5 animate-spin" />
                             <span>{searchLoading ? 'Recherche...' : 'Chargement...'}</span>
                           </div>
                         )}
                       {/* Filtre par catégorie */}
                       <div className="mb-3">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Catégorie</p>
+                        <p className="text-xs text-stone-600 mb-1">Catégorie</p>
                         <div className="flex gap-2 overflow-x-auto pb-1">
                           {RECIPE_CATEGORIES.map((cat) => (
                             <button
@@ -396,7 +285,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                               className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all duration-300 ${
                                 categoryFilter === cat
                                   ? 'bg-green-600 text-white'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                  : 'bg-stone-300 text-stone-800 hover:bg-stone-400'
                               }`}
                             >
                               {cat}
@@ -412,7 +301,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                             className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
                               filter === 'all'
                                 ? 'bg-green-600 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                : 'bg-stone-300 text-stone-800 hover:bg-stone-400'
                             }`}
                           >
                             Toutes ({stats.total})
@@ -422,7 +311,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                             className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
                               filter === 'can-make'
                                 ? 'bg-green-600 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                : 'bg-stone-300 text-stone-800 hover:bg-stone-400'
                             }`}
                           >
                             ✅ Je peux faire ({stats.canMake})
@@ -432,7 +321,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                             className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
                               filter === 'missing-few'
                                 ? 'bg-green-600 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                : 'bg-stone-300 text-stone-800 hover:bg-stone-400'
                             }`}
                           >
                             ⚠️ Quelques ingrédients manquants ({stats.missingFew})
@@ -449,9 +338,11 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
             </div>
           ) : filteredRecipes.length === 0 ? (
             <div className="text-center py-20">
-              <ChefHat className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">
-                Aucune recette trouvée
+              <ChefHat className="w-16 h-16 text-stone-500 mx-auto mb-4" />
+              <p className="text-stone-600 mb-2">
+                {availableProducts.length === 0
+                  ? 'Ajoutez des ingrédients à votre inventaire pour voir des recettes personnalisées'
+                  : 'Aucune recette trouvée'}
               </p>
             </div>
           ) : (
@@ -485,7 +376,7 @@ function RecipeCard({ recipe, onClick, showIngredientMatch }: RecipeCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white dark:bg-stone-900/95 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+      className="bg-stone-100 shadow-md border border-stone-300 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
@@ -512,12 +403,12 @@ function RecipeCard({ recipe, onClick, showIngredientMatch }: RecipeCardProps) {
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="text-gray-900 dark:text-white mb-3 line-clamp-2">
+        <h3 className="text-stone-800 mb-3 line-clamp-2">
           {recipe.name}
         </h3>
 
         {/* Info */}
-        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex items-center gap-4 text-sm text-stone-600">
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
             <span>{recipe.cookTime} min</span>
@@ -534,13 +425,13 @@ function RecipeCard({ recipe, onClick, showIngredientMatch }: RecipeCardProps) {
 
         {/* Ingredient match details */}
         {showIngredientMatch && (recipe.usedIngredientCount || 0) > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-3 pt-3 border-t border-stone-300">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-green-600 dark:text-green-400">
+              <span className="text-green-600">
                 ✓ {recipe.usedIngredientCount} ingrédient(s) disponible(s)
               </span>
               {(recipe.missedIngredientCount || 0) > 0 && (
-                <span className="text-orange-600 dark:text-orange-400">
+                <span className="text-orange-600">
                   ✗ {recipe.missedIngredientCount} ingrédient(s) manquant(s)
                 </span>
               )}

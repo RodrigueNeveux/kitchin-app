@@ -39,10 +39,10 @@ const NotificationsScreen = lazy(() =>
 
 // Composant de chargement
 const LoadingScreen = () => (
-  <div className="h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
+  <div className="h-screen flex items-center justify-center bg-stone-200">
     <div className="text-center">
-      <div className="w-12 h-12 border-4 border-green-600 dark:border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p className="text-stone-600 dark:text-stone-400">Chargement...</p>
+      <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-stone-600">Chargement...</p>
     </div>
   </div>
 );
@@ -89,30 +89,31 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingLists>(initializeShoppingLists);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Apply dark mode to document + theme-color pour la barre de statut
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', '#0c0a09');
-    } else {
-      document.documentElement.classList.remove('dark');
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', '#16a34a');
-    }
-  }, [darkMode]);
-
   // Check for existing session on mount and listen to auth changes
   useEffect(() => {
-    checkSession();
+    let cancelled = false;
+    
+    const init = async () => {
+      try {
+        await checkSession();
+      } catch (err) {
+        console.error('Init error:', err);
+        if (!cancelled) setLoading(false);
+      }
+    };
+    
+    init();
+    
+    // Timeout de sécurité : afficher l'écran après 3s même si Firebase bloque
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 3000);
     
     // Listen for auth state changes (Firebase)
     const unsubscribe = firebaseApi.onAuthStateChange(async (firebaseUser) => {
+      if (cancelled) return;
       if (firebaseUser) {
         setIsAuthenticated(true);
-        // Charger les données utilisateur après authentification
         await loadUserData();
       } else {
         setIsAuthenticated(false);
@@ -125,6 +126,8 @@ function AppContent() {
     });
 
     return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
       unsubscribe();
     };
   }, []);
@@ -770,7 +773,7 @@ function AppContent() {
   }
 
   return (
-    <div className={`min-h-screen w-full md:pl-24 transition-colors duration-300 ${darkMode ? 'bg-stone-950' : 'bg-stone-50'} relative`}>
+    <div className="min-h-screen w-full md:pl-24 bg-stone-200 relative">
       {activeScreen === 'home' && (
         <HomeScreen
           expiringProducts={expiringProducts}
@@ -849,8 +852,6 @@ function AppContent() {
             onBack={() => setActiveScreen('profile')}
             onUpdateHouseholdName={handleUpdateHouseholdName}
             onUpdateEmail={handleUpdateEmail}
-            darkMode={darkMode}
-            onToggleDarkMode={() => setDarkMode(!darkMode)}
           />
         </Suspense>
       )}
@@ -869,7 +870,6 @@ function AppContent() {
             onBack={() => setSelectedRecipe(null)}
             availableProducts={products}
             onAddMissingToShoppingList={user?.householdId ? handleAddMissingIngredientsToList : undefined}
-            darkMode={darkMode}
           />
         </Suspense>
       )}

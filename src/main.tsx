@@ -14,6 +14,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 
 // Importez le CSS
 import './index.css';
+import './styles/globals.css';
 
 const rootElement = document.getElementById('root');
 

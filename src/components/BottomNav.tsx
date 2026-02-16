@@ -17,7 +17,7 @@ function BottomNavComponent({ activeScreen, onNavigate, notificationCount = 0 }:
 
   return (
     // Mobile: bottom bar. Desktop (md+): vertical left sidebar
-    <nav className="fixed bottom-0 left-0 right-0 md:top-0 md:bottom-0 md:left-0 md:w-24 bg-white dark:bg-stone-900/95 border-t border-stone-200 dark:border-stone-800 md:border-r md:border-t-0 z-50 safe-area-inset-bottom transition-colors duration-300 backdrop-blur-sm">
+    <nav className="fixed bottom-0 left-0 right-0 md:top-0 md:bottom-0 md:left-0 md:w-24 bg-stone-100 border-t border-stone-300 md:border-r md:border-t-0 z-50 safe-area-inset-bottom backdrop-blur-sm shadow-sm">
       <div className="flex justify-around items-center px-4 py-2 max-w-md mx-auto md:flex-col md:items-center md:py-6 md:gap-4">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -32,7 +32,7 @@ function BottomNavComponent({ activeScreen, onNavigate, notificationCount = 0 }:
             >
               <div className="relative">
                 <Icon
-                  className={`w-6 h-6 transition-colors ${isActive ? 'text-green-600 dark:text-green-400' : 'text-stone-400 dark:text-stone-500'}`}
+                  className={`w-6 h-6 transition-colors ${isActive ? 'text-green-600' : 'text-stone-500'}`}
                 />
                 {showBadge && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
@@ -41,7 +41,7 @@ function BottomNavComponent({ activeScreen, onNavigate, notificationCount = 0 }:
                 )}
               </div>
               {/* Label: hidden on very small screens, visible on md and up (sidebar and larger screens) */}
-              <span className={`text-xs hidden md:block transition-colors ${isActive ? 'text-green-600 dark:text-green-400' : 'text-stone-400 dark:text-stone-500'}`}>
+              <span className={`text-xs hidden md:block transition-colors ${isActive ? 'text-green-600' : 'text-stone-500'}`}>
                 {item.label}
               </span>
             </button>

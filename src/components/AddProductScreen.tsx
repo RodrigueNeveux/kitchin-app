@@ -114,13 +114,13 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header - Affiche le produit scanné ou le titre */}
-      <header className="bg-white dark:bg-stone-900/95 px-6 py-4 shadow-sm flex-shrink-0">
+      <header className="bg-stone-100 px-6 py-4 shadow-sm flex-shrink-0">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto gap-3">
           <button
             onClick={onBack}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
+            className="p-2 rounded-full hover:bg-stone-300 transition-colors flex-shrink-0"
           >
-            <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            <ArrowLeft className="w-6 h-6 text-stone-600" />
           </button>
           {productImage ? (
             <div className="flex-1 flex items-center justify-center min-w-0">
@@ -131,7 +131,7 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
               />
             </div>
           ) : (
-            <h1 className="flex-1 text-center text-gray-900 dark:text-white">
+            <h1 className="flex-1 text-center text-stone-800">
               Ajouter un produit
             </h1>
           )}
@@ -156,7 +156,7 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
           <button
             type="button"
             onClick={() => handleBarcodeScanned('3017620422003')}
-            className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-600"
+            className="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-stone-300"
           >
             Voir un exemple de produit scanné
           </button>
@@ -164,10 +164,10 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
           {/* Product Image - affiché uniquement si pas encore scanné (le produit est dans le header) */}
           {!productImage && (
             <div className="flex flex-col items-center">
-              <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center overflow-hidden">
+              <div className="w-32 h-32 bg-stone-200 rounded-2xl flex items-center justify-center overflow-hidden">
                 <Camera className="w-12 h-12 text-gray-400" />
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-sm text-stone-500 mt-2">
                 Scannez ou entrez manuellement
               </p>
             </div>

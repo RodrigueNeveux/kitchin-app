@@ -27,22 +27,22 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-stone-900/95 rounded-xl shadow-lg p-8 max-w-md w-full">
+        <div className="min-h-screen bg-stone-200 flex items-center justify-center p-4">
+          <div className="bg-stone-100 rounded-xl shadow-lg p-8 max-w-md w-full">
             <div className="text-center">
               <div className="text-6xl mb-4">⚠️</div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-2xl font-bold text-stone-800 mb-2">
                 Une erreur est survenue
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-stone-600 mb-6">
                 L'application a rencontré un problème. Veuillez rafraîchir la page.
               </p>
               {this.state.error && (
-                <details className="text-left bg-gray-100 dark:bg-gray-700 p-4 rounded mb-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <details className="text-left bg-stone-200 p-4 rounded mb-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-stone-700 mb-2">
                     Détails de l'erreur
                   </summary>
-                  <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto">
+                  <pre className="text-xs text-stone-600 overflow-auto">
                     {this.state.error.toString()}
                   </pre>
                 </details>

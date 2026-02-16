@@ -118,19 +118,19 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overflow-x-hidden [&_#barcode-reader]:overflow-hidden [&_#barcode-reader_*]:overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-stone-100 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overflow-x-hidden [&_#barcode-reader]:overflow-hidden [&_#barcode-reader_*]:overflow-hidden shadow-xl transition-colors duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-gray-900">Scanner un code-barres</h2>
+        <div className="flex items-center justify-between p-6 border-b border-stone-300">
+          <h2 className="text-stone-800">Scanner un code-barres</h2>
           <button
             onClick={() => {
               stopScanner();
               onClose();
             }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-stone-200 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-stone-600" />
           </button>
         </div>
 
@@ -139,12 +139,12 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
           {/* Camera View - Only show if camera is available */}
           {!cameraUnavailable && (
             <div className="space-y-4">
-              <div className="bg-gray-100 rounded-xl overflow-hidden" style={{ minHeight: '300px', maxHeight: '320px' }}>
+              <div className="bg-stone-200 rounded-xl overflow-hidden" style={{ minHeight: '300px', maxHeight: '320px' }}>
                 <div id="barcode-reader" className="w-full overflow-hidden [&_video]:object-cover [&_*]:max-h-[300px]" style={{ overflow: 'hidden' }} />
                 {!isScanning && !error && (
                   <div className="flex flex-col items-center justify-center py-12 px-4">
-                    <Camera className="w-16 h-16 text-gray-400 mb-4" />
-                    <p className="text-gray-500 text-center text-sm">
+                    <Camera className="w-16 h-16 text-stone-500 mb-4" />
+                    <p className="text-stone-500 text-center text-sm">
                       Initialisation de la caméra...
                     </p>
                   </div>
@@ -152,9 +152,9 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
               </div>
 
               {isScanning && (
-                <div className="text-center text-sm text-gray-600">
+                <div className="text-center text-sm text-stone-600">
                   <p>Positionnez le code-barres dans le cadre</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-stone-500 mt-1">
                     Le scan se fera automatiquement
                   </p>
                 </div>
@@ -164,7 +164,7 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg text-sm">
               <div className="flex items-start gap-2">
                 <Camera className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div>
@@ -180,21 +180,21 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
             {!cameraUnavailable && (
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
+                  <div className="w-full border-t border-stone-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white text-gray-500">ou</span>
+                  <span className="px-3 bg-stone-100 text-stone-500">ou</span>
                 </div>
               </div>
             )}
 
             <form onSubmit={handleManualSubmit} className="space-y-3">
               <div>
-                <label htmlFor="manual-barcode" className="block text-sm text-gray-700 mb-2">
+                <label htmlFor="manual-barcode" className="block text-sm text-stone-700 mb-2">
                   {cameraUnavailable ? 'Entrer le code-barres' : 'Entrer le code-barres manuellement'}
                 </label>
                 <div className="relative">
-                  <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-500" />
                   <input
                     id="manual-barcode"
                     type="text"
@@ -203,18 +203,18 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
                     value={manualBarcode}
                     onChange={(e) => setManualBarcode(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="Ex: 3017620422003"
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-11 pr-4 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-stone-50 text-stone-800 placeholder:text-stone-500"
                     autoFocus={cameraUnavailable}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-stone-500 mt-2">
                   Le code-barres se trouve généralement sous le produit, composé de 13 chiffres.
                 </p>
               </div>
               <button
                 type="submit"
                 disabled={!manualBarcode.trim()}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Valider le code-barres
               </button>
