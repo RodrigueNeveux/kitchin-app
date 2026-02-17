@@ -277,12 +277,19 @@ export class ApiClient {
 
 export const apiClient = new ApiClient();
 
-// Open Food Facts API
+// Open Food Facts API - utilise le proxy Supabase (User-Agent correct) ou fallback direct
 export async function getProductByBarcode(barcode: string) {
   try {
+    const apiBase = `https://${projectId}.supabase.co/functions/v1/server`;
+    const proxyRes = await fetch(`${apiBase}/make-server-e298da7a/product/barcode/${barcode}`, {
+      headers: { Authorization: `Bearer ${publicAnonKey}` },
+    });
+    if (proxyRes.ok) {
+      const { product } = await proxyRes.json();
+      if (product) return product;
+    }
     const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
     const data = await response.json();
-    
     if (data.status === 1 && data.product) {
       const product = data.product;
       

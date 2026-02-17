@@ -87,6 +87,46 @@ app.get("/make-server-e298da7a/health", (c) => {
   return c.json({ status: "ok" });
 });
 
+// Open Food Facts proxy (User-Agent requis par l'API, impossible côté client)
+app.get("/make-server-e298da7a/product/barcode/:barcode", async (c) => {
+  const barcode = c.req.param("barcode");
+  if (!barcode || !/^\d+$/.test(barcode)) {
+    return c.json({ error: "Code-barres invalide" }, 400);
+  }
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
+      headers: { "User-Agent": "KitchIn-App/1.0 (https://kitchin.app)" },
+    });
+    const data = await res.json();
+    if (data.status !== 1 || !data.product) {
+      return c.json({ product: null });
+    }
+    const product = data.product;
+    const categories = product.categories_tags || [];
+    const categoryText = categories.join(" ").toLowerCase();
+    let productCategory: "fridge" | "pantry" | "freezer" = "pantry";
+    if (categoryText.includes("dairy") || categoryText.includes("lait") || categoryText.includes("yaourt") ||
+        categoryText.includes("viande") || categoryText.includes("meat") || categoryText.includes("poisson") ||
+        categoryText.includes("légume") || categoryText.includes("vegetable") || categoryText.includes("fruit")) {
+      productCategory = "fridge";
+    } else if (categoryText.includes("surgelé") || categoryText.includes("frozen") ||
+               categoryText.includes("glace") || categoryText.includes("ice-cream")) {
+      productCategory = "freezer";
+    }
+    return c.json({
+      product: {
+        name: product.product_name || product.product_name_fr || "Produit inconnu",
+        brand: product.brands || "",
+        category: productCategory,
+        image: product.image_url || product.image_front_url || undefined,
+      },
+    });
+  } catch (err) {
+    console.log("Open Food Facts proxy error:", err);
+    return c.json({ product: null }, 500);
+  }
+});
+
 // ===== AUTH ROUTES =====
 
 // Sign up new user

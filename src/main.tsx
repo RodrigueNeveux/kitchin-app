@@ -28,7 +28,7 @@ try {
     <React.StrictMode>
       <ErrorBoundary>
         <App />
-        <Toaster position="top-center" />
+        <Toaster position="bottom-center" offset="88px" richColors closeButton />
       </ErrorBoundary>
     </React.StrictMode>
   );
