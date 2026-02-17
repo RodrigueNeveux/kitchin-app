@@ -114,7 +114,6 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
       setBaseRecipes(convertedRecipes);
       toast.success(`${convertedRecipes.length} recettes trouvées !`);
     } catch (error) {
-      console.error('Erreur lors du chargement des recettes:', error);
       toast.error('Erreur lors du chargement des recettes');
       // Fallback sur les recettes françaises
       const fallbackRecipes = await getFrenchRecipes();
@@ -190,7 +189,6 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
         const fromApi = combined.filter(x => !localIds.has(x.id));
         setRecipes([...localMatches, ...fromApi]);
       } catch (e) {
-        if (!cancelled) console.error('Search error:', e);
       } finally {
         if (!cancelled) setSearchLoading(false);
       }
@@ -247,7 +245,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
   return (
     <div className="flex flex-col h-screen bg-stone-200">
                   {/* Header */}
-                  <header className="bg-stone-100 px-6 py-4 shadow-sm border-b border-stone-300 md:sticky md:top-0 md:z-10">
+                  <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm border-b border-stone-300 md:sticky md:top-0 md:z-10 flex-shrink-0">
                     <div className="max-w-4xl mx-auto">
                       <h1 className="text-center text-stone-800 mb-4">
                         🍳 Recettes
@@ -328,7 +326,7 @@ export function RecipesScreen({ onRecipeClick, availableProducts = [] }: Recipes
                       )}
                     </div>
                   </header>      {/* Recipes Grid */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-24">
+      <div className="content-with-nav flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <div className="max-w-4xl mx-auto">
           {loading ? (
             <div className="flex items-center justify-center py-20">

@@ -50,7 +50,6 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
           setDetailedRecipe(details);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des détails:', error);
       } finally {
         setLoading(false);
       }
@@ -107,7 +106,6 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
         }
 
       } catch (error) {
-        console.error('❌ Erreur lors de la traduction automatique:', error);
       } finally {
         setTranslating(false);
       }
@@ -268,7 +266,7 @@ export function RecipeDetailScreen({ recipe, onBack, availableProducts = [], onA
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 pb-6">
+      <div className="content-no-nav flex-1 overflow-y-auto px-4 sm:px-6 py-4">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6 pb-4">
           {/* Bouton Ajouter les ingrédients manquants */}
           {missingIngredients.length > 0 && onAddMissingToShoppingList && (

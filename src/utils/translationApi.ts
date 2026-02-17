@@ -112,7 +112,6 @@ export async function translateText(text: string): Promise<string> {
       return text;
     }
   } catch (error) {
-    console.error('❌ Erreur lors de la traduction:', error);
     return text;
   }
 }

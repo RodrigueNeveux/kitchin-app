@@ -122,7 +122,6 @@ export class FirebaseApi {
       
       return userCredential;
     } catch (error: any) {
-      console.error('Signup error:', error);
       let errorMessage = 'Erreur lors de la création du compte';
       
       if (error.code === 'auth/email-already-in-use') {
@@ -142,7 +141,6 @@ export class FirebaseApi {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       return userCredential;
     } catch (error: any) {
-      console.error('Login error:', error);
       let errorMessage = 'Erreur lors de la connexion';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -161,7 +159,6 @@ export class FirebaseApi {
     try {
       await signOut(auth);
     } catch (error: any) {
-      console.error('Logout error:', error);
       throw new Error('Erreur lors de la déconnexion');
     }
   }
@@ -170,7 +167,6 @@ export class FirebaseApi {
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
-      console.error('Password reset error:', error);
       let errorMessage = 'Erreur lors de l\'envoi de l\'email de réinitialisation';
       if (error.code === 'auth/user-not-found') {
         errorMessage = 'Aucun compte associé à cette adresse email';
@@ -249,7 +245,6 @@ export class FirebaseApi {
       
       return { user: userProfile, household, members };
     } catch (error: any) {
-      console.error('Get profile error:', error);
       throw new Error(error.message || 'Erreur lors de la récupération du profil');
     }
   }
@@ -261,7 +256,6 @@ export class FirebaseApi {
         await updateProfile(auth.currentUser, { displayName: name });
       }
     } catch (error: any) {
-      console.error('Update user name error:', error);
       throw new Error('Erreur lors de la mise à jour du nom');
     }
   }
@@ -272,7 +266,6 @@ export class FirebaseApi {
     try {
       await updateDoc(doc(db, 'households', householdId), { name });
     } catch (error: any) {
-      console.error('Update household name error:', error);
       throw new Error('Erreur lors de la mise à jour du nom du foyer');
     }
   }
@@ -298,7 +291,6 @@ export class FirebaseApi {
       
       return inviteCode;
     } catch (error: any) {
-      console.error('Create invite error:', error);
       throw new Error('Erreur lors de la création du code d\'invitation');
     }
   }
@@ -362,7 +354,6 @@ export class FirebaseApi {
         usedAt: serverTimestamp()
       });
     } catch (error: any) {
-      console.error('Join household error:', error);
       throw new Error(error.message || 'Erreur lors de la jonction au foyer');
     }
   }
@@ -389,7 +380,6 @@ export class FirebaseApi {
       
       return householdRef.id;
     } catch (error: any) {
-      console.error('Create household error:', error);
       throw new Error('Erreur lors de la création du foyer');
     }
   }
@@ -425,7 +415,6 @@ export class FirebaseApi {
         householdId: null
       });
     } catch (error: any) {
-      console.error('Leave household error:', error);
       throw new Error(error.message || 'Erreur lors de la sortie du foyer');
     }
   }
@@ -462,7 +451,6 @@ export class FirebaseApi {
         householdId: null
       });
     } catch (error: any) {
-      console.error('Remove member error:', error);
       throw new Error(error.message || 'Erreur lors du retrait du membre');
     }
   }
@@ -493,7 +481,6 @@ export class FirebaseApi {
         };
       });
     } catch (error: any) {
-      console.error('Get products error:', error);
       throw new Error('Erreur lors de la récupération des produits');
     }
   }
@@ -507,7 +494,6 @@ export class FirebaseApi {
       });
       return productRef.id;
     } catch (error: any) {
-      console.error('Add product error:', error);
       throw new Error('Erreur lors de l\'ajout du produit');
     }
   }
@@ -516,7 +502,6 @@ export class FirebaseApi {
     try {
       await updateDoc(doc(db, 'products', productId), updates);
     } catch (error: any) {
-      console.error('Update product error:', error);
       throw new Error('Erreur lors de la mise à jour du produit');
     }
   }
@@ -525,7 +510,6 @@ export class FirebaseApi {
     try {
       await deleteDoc(doc(db, 'products', productId));
     } catch (error: any) {
-      console.error('Delete product error:', error);
       throw new Error('Erreur lors de la suppression du produit');
     }
   }
@@ -561,7 +545,6 @@ export class FirebaseApi {
         pharmacy: allItems.filter(item => item.listId === 'pharmacy')
       };
     } catch (error: any) {
-      console.error('Get shopping lists error:', error);
       throw new Error('Erreur lors de la récupération des listes de courses');
     }
   }
@@ -575,7 +558,6 @@ export class FirebaseApi {
       });
       return itemRef.id;
     } catch (error: any) {
-      console.error('Add shopping item error:', error);
       throw new Error('Erreur lors de l\'ajout de l\'article');
     }
   }
@@ -584,7 +566,6 @@ export class FirebaseApi {
     try {
       await updateDoc(doc(db, 'shoppingLists', itemId), updates);
     } catch (error: any) {
-      console.error('Update shopping item error:', error);
       throw new Error('Erreur lors de la mise à jour de l\'article');
     }
   }
@@ -593,7 +574,6 @@ export class FirebaseApi {
     try {
       await deleteDoc(doc(db, 'shoppingLists', itemId));
     } catch (error: any) {
-      console.error('Delete shopping item error:', error);
       throw new Error('Erreur lors de la suppression de l\'article');
     }
   }

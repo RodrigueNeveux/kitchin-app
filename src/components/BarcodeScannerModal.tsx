@@ -1,6 +1,6 @@
 import { X, Camera, Barcode } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 interface BarcodeScannerModalProps {
   isOpen: boolean;
@@ -47,14 +47,25 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
       setError(null);
       setCameraUnavailable(false);
       
-      const html5QrCode = new Html5Qrcode('barcode-reader');
+      const html5QrCode = new Html5Qrcode('barcode-reader', {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+        ],
+        useBarCodeDetectorIfSupported: true,
+      });
       scannerRef.current = html5QrCode;
 
       await html5QrCode.start(
-        { facingMode: 'environment' }, // Caméra arrière
+        { facingMode: 'environment' }, // Caméra arrière sur mobile
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
+          fps: 15,
+          qrbox: (w, h) => ({ width: Math.min(280, w * 0.95), height: Math.min(140, h * 0.45) }),
           aspectRatio: 1.0,
         },
         (decodedText) => {
@@ -70,7 +81,6 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
 
       setIsScanning(true);
     } catch (err: any) {
-      console.error('Erreur de démarrage du scanner:', err);
       
       let errorMessage = 'Impossible d\'accéder à la caméra.';
       
@@ -98,7 +108,6 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
         }
         scannerRef.current.clear();
       } catch (err) {
-        console.error('Erreur d\'arrêt du scanner:', err);
       } finally {
         scannerRef.current = null;
         setIsScanning(false);

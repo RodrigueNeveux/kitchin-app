@@ -37,7 +37,7 @@ function HomeScreenComponent({
   return (
     <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm border-b border-stone-300">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm border-b border-stone-300 flex-shrink-0">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button 
             onClick={onNotificationsClick}
@@ -61,7 +61,7 @@ function HomeScreenComponent({
       </header>
 
       {/* Household Info Banner */}
-      <div className="bg-gradient-to-r from-green-100 to-emerald-100 px-6 py-4 mx-4 mt-4 rounded-xl shadow-sm border border-stone-300">
+      <div className="bg-gradient-to-r from-green-100 to-emerald-100 px-4 sm:px-6 py-4 mx-3 sm:mx-4 mt-4 rounded-xl shadow-sm border border-stone-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <div>
             <p className="text-sm text-stone-600">
@@ -89,7 +89,7 @@ function HomeScreenComponent({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 pb-32">
+      <div className="content-with-nav flex-1 overflow-y-auto px-4 sm:px-6 py-4">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* À Consommer Rapidement Section */}
           <section>
@@ -150,8 +150,8 @@ function HomeScreenComponent({
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-stone-800 font-medium">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-stone-800 font-medium truncate">
                         {product.name}
                       </p>
                       <p className="text-sm text-red-600">
@@ -209,8 +209,8 @@ function HomeScreenComponent({
                         </div>
                       )}
                     </div>
-                    <div>
-                      <p className="text-stone-800">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-stone-800 truncate">
                         {product.name}
                       </p>
                       {product.expiryDate && (

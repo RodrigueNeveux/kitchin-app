@@ -169,9 +169,9 @@ export function ShoppingListScreen({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-stone-200 pb-16 md:pb-0">
+    <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
@@ -206,7 +206,7 @@ export function ShoppingListScreen({
 
       {/* Progress Bar */}
       {totalItems > 0 && (
-        <div className="bg-stone-100 px-6 py-3 border-b border-stone-300">
+        <div className="bg-stone-100 px-4 sm:px-6 py-3 border-b border-stone-300">
           <div className="max-w-md md:max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-stone-600">
@@ -227,7 +227,7 @@ export function ShoppingListScreen({
       )}
 
       {/* List Tabs */}
-      <div className="bg-stone-100/95 px-6 py-3 border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
+      <div className="bg-stone-100/95 px-4 sm:px-6 py-3 border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
         <div className="flex gap-2 max-w-md md:max-w-4xl mx-auto overflow-x-auto">
           {listConfigs.map((list) => {
             const stats = getListStats(list.id);
@@ -266,7 +266,7 @@ export function ShoppingListScreen({
 
       {/* Quick Add Suggestions */}
       {showSuggestions && (
-        <div className="bg-gradient-to-r from-green-50 to-blue-50  px-6 py-4 border-b border-green-300">
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 px-4 sm:px-6 py-4 border-b border-green-300">
           <div className="max-w-md md:max-w-4xl mx-auto">
             <p className="text-sm text-stone-700 mb-3 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-green-600" />
@@ -288,7 +288,7 @@ export function ShoppingListScreen({
       )}
 
       {/* Shopping Items List */}
-      <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 pb-24 sm:pb-8">
+      <div ref={listScrollRef} className="content-with-nav flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* Unchecked Items - Grouped by Category */}
           {Object.entries(itemsByCategory).map(([categoryKey, categoryItems]) => (
@@ -309,8 +309,8 @@ export function ShoppingListScreen({
                     onCheckedChange={() => onToggleItem(activeList, item.id)}
                     className="border-stone-300"
                   />
-                  <div className="flex-1">
-                    <p className="text-stone-800">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-stone-800 truncate">
                       {item.name}
                     </p>
                     <p className="text-sm text-stone-500">

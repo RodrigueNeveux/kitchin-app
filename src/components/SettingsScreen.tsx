@@ -76,7 +76,7 @@ export function SettingsScreen({
   return (
     <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm flex-shrink-0 border-b border-stone-300">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm flex-shrink-0 border-b border-stone-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
@@ -92,7 +92,7 @@ export function SettingsScreen({
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
+      <div className="content-no-nav flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* Language Section */}
           <section className="bg-stone-100 rounded-xl p-6 shadow-sm border border-stone-300 space-y-6">

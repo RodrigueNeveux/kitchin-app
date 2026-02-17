@@ -58,7 +58,7 @@ export function InventoryScreen({
   return (
     <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
@@ -89,7 +89,7 @@ export function InventoryScreen({
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="bg-stone-100 px-6 py-3 border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
+        <div className="bg-stone-100 px-4 sm:px-6 py-3 border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
           <div className="max-w-md md:max-w-4xl mx-auto">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-500" />
@@ -115,7 +115,7 @@ export function InventoryScreen({
       )}
 
       {/* Category Filters */}
-      <div className="bg-stone-100 px-6 py-3 border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
+      <div className="bg-stone-100 px-4 sm:px-6 py-3 border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
         <div className="flex gap-2 max-w-md md:max-w-4xl mx-auto overflow-x-auto">
           {categories.map((category) => (
             <button
@@ -134,7 +134,7 @@ export function InventoryScreen({
       </div>
 
       {/* Product List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 pb-40">
+      <div className="content-with-nav flex-1 overflow-y-auto px-4 sm:px-6 py-4">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-3">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12">

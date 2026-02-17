@@ -111,7 +111,6 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
       try {
         localStorage.setItem('dismissedNotifications', JSON.stringify(next));
       } catch (e) {
-        console.error('Impossible de sauvegarder dismissedNotifications', e);
       }
       return next;
     });
@@ -146,7 +145,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
   return (
     <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
@@ -170,7 +169,7 @@ export function NotificationsScreen({ products, onBack, onNavigateToInventory }:
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
+      <div className="content-no-nav flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-4">
           {/* Actions */}
           {notifications.length > 0 && unreadCount > 0 && (

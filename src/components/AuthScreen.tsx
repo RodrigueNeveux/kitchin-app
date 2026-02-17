@@ -67,7 +67,6 @@ export function AuthScreen({ onAuth, onForgotPassword }: AuthScreenProps) {
       // Afficher le message d'erreur détaillé
       const errorMessage = err.message || 'Une erreur est survenue';
       setError(errorMessage);
-      console.error('Auth error in AuthScreen:', err);
     } finally {
       setLoading(false);
     }

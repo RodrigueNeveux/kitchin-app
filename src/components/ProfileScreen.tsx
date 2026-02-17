@@ -1,5 +1,7 @@
-import { ArrowLeft, Users, Copy, LogOut, UserPlus, Check, UserX, Settings, QrCode, DoorOpen } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, Users, Copy, LogOut, UserPlus, Check, UserX, Settings, QrCode, DoorOpen, Camera } from 'lucide-react';
+import { QRCodeDisplay } from './QRCodeDisplay';
+import { QRCodeScannerModal } from './QRCodeScannerModal';
+import { useState, useEffect } from 'react';
 import { toast } from "sonner";
 
 interface Member {
@@ -25,11 +27,9 @@ interface ProfileScreenProps {
   onCreateHousehold?: (name: string) => Promise<void>;
   onLeaveHousehold?: () => Promise<void>;
   onSettingsClick?: () => void;
+  /** Code d'invitation pré-rempli (ex: depuis une URL /join/CODE) */
+  initialJoinCode?: string;
 }
-
-// URL pour générer un QR code (API gratuite)
-const getQRCodeUrl = (text: string, size = 200) =>
-  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
 
 export function ProfileScreen({
   user,
@@ -43,11 +43,20 @@ export function ProfileScreen({
   onCreateHousehold,
   onLeaveHousehold,
   onSettingsClick,
+  initialJoinCode = '',
 }: ProfileScreenProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [showInvite, setShowInvite] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+
+  useEffect(() => {
+    if (initialJoinCode) {
+      setJoinCode(initialJoinCode.replace(/[-\s]/g, '').toUpperCase());
+      setShowJoin(true);
+    }
+  }, [initialJoinCode]);
   const [showCreate, setShowCreate] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [newHouseholdName, setNewHouseholdName] = useState('');
@@ -65,9 +74,26 @@ export function ProfileScreen({
       setInviteCode(code);
       setShowInvite(true);
     } catch (error) {
-      console.error('Error creating invite:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /** Extrait le code d'invitation d'une URL (ex: https://kitchin.app/join/ABC123) ou retourne le texte brut */
+  const extractInviteCodeFromQR = (data: string): string => {
+    const match = data.match(/\/join\/([A-Za-z0-9]+)/i);
+    if (match) return match[1].toUpperCase();
+    return data.trim().replace(/[-\s]/g, '').toUpperCase();
+  };
+
+  const handleQRScan = (data: string) => {
+    const code = extractInviteCodeFromQR(data);
+    if (code) {
+      setJoinCode(code);
+      setShowJoin(true);
+      toast.success('Code détecté ! Cliquez sur Rejoindre.');
+    } else {
+      toast.error('QR code non reconnu');
     }
   };
 
@@ -92,7 +118,6 @@ export function ProfileScreen({
       setJoinCode('');
       // Le toast de succès est géré dans App.tsx
     } catch (error: any) {
-      console.error('Error joining household:', error);
       // L'erreur est déjà gérée dans App.tsx avec toast.error
     } finally {
       setLoading(false);
@@ -108,7 +133,6 @@ export function ProfileScreen({
     try {
       await onRemoveMember(memberId);
     } catch (error) {
-      console.error('Error removing member:', error);
       alert('Erreur lors du retrait du membre');
     } finally {
       setLoading(false);
@@ -124,7 +148,6 @@ export function ProfileScreen({
       setShowCreate(false);
       setNewHouseholdName('');
     } catch (error) {
-      console.error('Error creating household:', error);
     } finally {
       setLoading(false);
     }
@@ -139,18 +162,17 @@ export function ProfileScreen({
     try {
       await onLeaveHousehold();
     } catch (error) {
-      console.error('Error leaving household:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const inviteLink = inviteCode ? `https://kitchin.app/join/${inviteCode}` : '';
+  const inviteLink = inviteCode ? `${typeof window !== 'undefined' ? window.location.origin : 'https://kitchin.app'}/join/${inviteCode}` : '';
 
   return (
     <div className="flex flex-col h-screen bg-stone-200">
       {/* Header */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm border-b border-stone-300 flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto">
           <button
             onClick={onBack}
@@ -183,7 +205,7 @@ export function ProfileScreen({
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-6">
+      <div className="content-no-nav flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <div className="max-w-md md:max-w-4xl mx-auto space-y-6">
           {/* User Info */}
           <section className="bg-stone-100 rounded-xl p-6 shadow-sm border border-stone-300 transition-colors duration-300">
@@ -335,7 +357,7 @@ export function ProfileScreen({
                         </div>
                         {showQRCode && inviteLink && (
                           <div className="flex justify-center pt-2">
-                            <img src={getQRCodeUrl(inviteLink, 180)} alt="QR Code invitation" className="rounded-lg border-2 border-green-300 bg-white p-2" />
+                            <QRCodeDisplay value={inviteLink} size={180} />
                           </div>
                         )}
                         <p className="text-xs text-stone-600 flex items-start gap-2">
@@ -358,8 +380,8 @@ export function ProfileScreen({
                   </button>
                   {showJoin && (
                     <div className="bg-blue-100 p-4 rounded-lg border border-blue-300">
-                      <p className="text-sm text-stone-700 mb-2">Vous quitterez ce foyer en rejoignant un autre. Entrez le code :</p>
-                      <div className="flex gap-2">
+                      <p className="text-sm text-stone-700 mb-2">Vous quitterez ce foyer en rejoignant un autre. Entrez le code ou scannez le QR :</p>
+                      <div className="flex gap-2 mb-2">
                         <input
                           type="text"
                           value={joinCode}
@@ -367,6 +389,13 @@ export function ProfileScreen({
                           placeholder="Code d'invitation"
                           className="flex-1 px-4 py-2 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-stone-100 text-stone-800 uppercase"
                         />
+                        <button
+                          onClick={() => setShowQRScanner(true)}
+                          className="p-2 bg-stone-200 hover:bg-stone-300 rounded-lg transition-colors"
+                          title="Scanner le QR code"
+                        >
+                          <Camera className="w-6 h-6 text-stone-600" />
+                        </button>
                         <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50">Rejoindre</button>
                       </div>
                     </div>
@@ -419,7 +448,7 @@ export function ProfileScreen({
                 </button>
                 {showJoin && (
                   <div className="bg-blue-100 p-4 rounded-lg border border-blue-300">
-                    <p className="text-sm text-stone-700 mb-2">Entrez le code d'invitation :</p>
+                    <p className="text-sm text-stone-700 mb-2">Entrez le code ou scannez le QR code d'invitation :</p>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -428,6 +457,13 @@ export function ProfileScreen({
                         placeholder="Code d'invitation"
                         className="flex-1 px-4 py-2 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-stone-100 text-stone-800 uppercase"
                       />
+                      <button
+                        onClick={() => setShowQRScanner(true)}
+                        className="p-2 bg-stone-200 hover:bg-stone-300 rounded-lg transition-colors"
+                        title="Scanner le QR code"
+                      >
+                        <Camera className="w-6 h-6 text-stone-600" />
+                      </button>
                       <button onClick={handleJoinHousehold} disabled={loading || !joinCode.trim()} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-300 disabled:opacity-50">Rejoindre</button>
                     </div>
                   </div>
@@ -437,6 +473,12 @@ export function ProfileScreen({
           </section>
         </div>
       </div>
+
+      <QRCodeScannerModal
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScan={handleQRScan}
+      />
     </div>
   );
 }

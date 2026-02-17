@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react
 import { HomeScreen } from './components/HomeScreen';
 import { BottomNav } from './components/BottomNav';
 import { firebaseApi } from './utils/firebase/api';
-import { auth } from './utils/firebase/client';
 import { toast } from "sonner";
 import type { Recipe } from './components/RecipesScreen';
 
@@ -89,6 +88,18 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingLists>(initializeShoppingLists);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [joinCodeFromUrl, setJoinCodeFromUrl] = useState('');
+
+  // Gérer l'URL /join/CODE (deep link invitation)
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/join\/([A-Za-z0-9]+)$/i);
+    if (match) {
+      setJoinCodeFromUrl(match[1].toUpperCase());
+      setActiveScreen('profile');
+      window.history.replaceState({}, document.title, '/' + (window.location.search || '') + (window.location.hash || ''));
+    }
+  }, []);
+
   // Check for existing session on mount and listen to auth changes
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +108,6 @@ function AppContent() {
       try {
         await checkSession();
       } catch (err) {
-        console.error('Init error:', err);
         if (!cancelled) setLoading(false);
       }
     };
@@ -174,7 +184,6 @@ function AppContent() {
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('Session check error:', error);
       setIsAuthenticated(false);
     } finally {
       setLoading(false);
@@ -220,7 +229,6 @@ function AppContent() {
         setShoppingLists(initializeShoppingLists());
       }
     } catch (error: any) {
-      console.error('Error loading user data:', error);
       // If unauthorized, logout the user
       if (error.message?.includes('Unauthorized') || error.message?.includes('permission')) {
         toast.error('Session expirée. Veuillez vous reconnecter.');
@@ -281,7 +289,6 @@ function AppContent() {
         toast.success('Connexion réussie !');
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
       
       // Gérer différents types d'erreurs
       let errorMessage = 'Une erreur est survenue lors de l\'authentification';
@@ -313,7 +320,6 @@ function AppContent() {
       setActiveScreen('home');
       toast.success('Déconnexion réussie');
     } catch (error) {
-      console.error('Logout error:', error);
       toast.error('Erreur lors de la déconnexion');
     }
   }, []);
@@ -348,7 +354,6 @@ function AppContent() {
       
       return inviteCode;
     } catch (error: any) {
-      console.error('Error creating invite:', error);
       const errorMessage = error.message || 'Erreur lors de la génération du code';
       toast.error(errorMessage);
       throw error;
@@ -369,7 +374,6 @@ function AppContent() {
       
       toast.success('Vous avez rejoint le foyer avec succès !', { duration: 3000 });
     } catch (error: any) {
-      console.error('Error joining household:', error);
       const errorMessage = error.message || 'Erreur lors de la jonction au foyer';
       toast.error(errorMessage);
       throw error;
@@ -384,7 +388,6 @@ function AppContent() {
       await loadUserData();
       toast.success('Foyer créé avec succès !');
     } catch (error: any) {
-      console.error('Error creating household:', error);
       toast.error(error.message || 'Erreur lors de la création du foyer');
       throw error;
     }
@@ -398,7 +401,6 @@ function AppContent() {
       await loadUserData();
       toast.success('Vous avez quitté le foyer');
     } catch (error: any) {
-      console.error('Error leaving household:', error);
       toast.error(error.message || 'Erreur lors de la sortie du foyer');
       throw error;
     }
@@ -422,7 +424,6 @@ function AppContent() {
       
       toast.success('Membre retiré du foyer avec succès');
     } catch (error: any) {
-      console.error('Error removing member:', error);
       const errorMessage = error.message || 'Erreur lors du retrait du membre';
       toast.error(errorMessage);
       throw error;
@@ -445,7 +446,6 @@ function AppContent() {
         prev.map((p) => p.id === id ? { ...p, quantity: newQuantity } : p)
       );
     } catch (error) {
-      console.error('Error updating product quantity:', error);
       toast.error('Erreur lors de la mise à jour du produit');
     }
   }, [products]);
@@ -456,7 +456,6 @@ function AppContent() {
       setProducts((prev) => prev.filter((p) => p.id !== id));
       toast.success('Produit supprimé');
     } catch (error) {
-      console.error('Error deleting product:', error);
       toast.error('Erreur lors de la suppression du produit');
     }
   }, []);
@@ -476,7 +475,6 @@ function AppContent() {
         ),
       }));
     } catch (error) {
-      console.error('Error toggling shopping item:', error);
       toast.error('Erreur lors de la mise à jour de l\'article');
     }
   }, [shoppingLists]);
@@ -490,7 +488,6 @@ function AppContent() {
       }));
       toast.success('Article supprimé');
     } catch (error) {
-      console.error('Error deleting shopping item:', error);
       toast.error('Erreur lors de la suppression de l\'article');
     }
   }, [shoppingLists]);
@@ -550,7 +547,6 @@ function AppContent() {
       }));
       toast.success('Article ajouté');
     } catch (error) {
-      console.error('Error adding shopping item:', error);
     }
   }, [shoppingLists]);
 
@@ -561,7 +557,6 @@ function AppContent() {
       }
       toast.success(`${items.length} ingrédient${items.length > 1 ? 's' : ''} ajouté${items.length > 1 ? 's' : ''} à la liste`);
     } catch (error) {
-      console.error('Error adding ingredients:', error);
       toast.error('Erreur lors de l\'ajout des ingrédients');
     }
   }, [handleAddItem]);
@@ -581,7 +576,6 @@ function AppContent() {
       
       toast.success('Article déplacé');
     } catch (error) {
-      console.error('Error moving shopping item:', error);
     }
   }, [shoppingLists]);
 
@@ -624,7 +618,6 @@ function AppContent() {
       setProducts((prev) => [...prev, newProduct]);
       toast.success('Produit ajouté avec succès !');
     } catch (error) {
-      console.error('Error adding product:', error);
       toast.error('Erreur lors de l\'ajout du produit');
       throw error;
     }
@@ -640,7 +633,6 @@ function AppContent() {
       setHousehold((prev: any) => ({ ...prev, name }));
       toast.success('Nom du foyer mis à jour');
     } catch (error: any) {
-      console.error('Error updating household name:', error);
       const errorMessage = error.message || 'Erreur lors de la mise à jour du nom du foyer';
       toast.error(errorMessage);
       throw error;
@@ -662,7 +654,6 @@ function AppContent() {
       setUser((prev: any) => ({ ...prev, email }));
       toast.success('Email mis à jour. Veuillez vérifier votre boîte mail pour confirmer.');
     } catch (error: any) {
-      console.error('Error updating email:', error);
       const errorMessage = error.message || 'Erreur lors de la mise à jour de l\'email';
       toast.error(errorMessage);
       throw error;
@@ -762,6 +753,7 @@ function AppContent() {
             onCreateHousehold={handleCreateHousehold}
             onLeaveHousehold={handleLeaveHousehold}
             onSettingsClick={() => setActiveScreen('settings')}
+            initialJoinCode={joinCodeFromUrl}
           />
         </Suspense>
       )}

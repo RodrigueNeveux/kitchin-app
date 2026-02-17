@@ -114,7 +114,7 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header - Affiche le produit scanné ou le titre */}
-      <header className="bg-stone-100 px-6 py-4 shadow-sm flex-shrink-0">
+      <header className="bg-stone-100 px-4 sm:px-6 py-4 shadow-sm flex-shrink-0">
         <div className="flex items-center justify-between max-w-md md:max-w-4xl mx-auto gap-3">
           <button
             onClick={onBack}
@@ -140,7 +140,7 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
       </header>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 pb-32">
+      <div className="content-no-nav flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         <form onSubmit={handleSubmit} className="max-w-md md:max-w-4xl mx-auto space-y-6 pb-6">
           {/* Scanner Button */}
           <button
@@ -152,16 +152,7 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
             Scanner un code-barres
           </button>
 
-          {/* Bouton exemple - produit réel d'Open Food Facts (Nutella) */}
-          <button
-            type="button"
-            onClick={() => handleBarcodeScanned('3017620422003')}
-            className="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-stone-300"
-          >
-            Voir un exemple de produit scanné
-          </button>
-
-          {/* Product Image - affiché uniquement si pas encore scanné (le produit est dans le header) */}
+          {/* Product Image */}
           {!productImage && (
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 bg-stone-200 rounded-2xl flex items-center justify-center overflow-hidden">

@@ -6,10 +6,13 @@
   --kitchin-text-muted: #57534e; /* stone-600 */
   --kitchin-border: #d6d3d1;   /* stone-300 */
   /* Safe area pour mobile (encoche, barre d'accueil) */
-  --sat: env(safe-area-inset-top);
-  --sab: env(safe-area-inset-bottom);
-  --sal: env(safe-area-inset-left);
-  --sar: env(safe-area-inset-right);
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  /* Espace réservé au bas (barre nav + safe area) - pour le padding des écrans */
+  --bottom-nav-height: 64px;
+  --content-bottom-padding: calc(var(--bottom-nav-height) + var(--sab) + 16px);
 }
 
 html {
@@ -24,6 +27,7 @@ html, body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
@@ -48,6 +52,8 @@ body {
   background-color: var(--kitchin-bg) !important;
   color: var(--kitchin-text) !important;
   font-feature-settings: "rlig" 1, "calt" 1;
+  overflow-x: hidden;
+  min-width: 0; /* Permet aux flex children de shrink */
 }
 
 /* Animations */
@@ -67,15 +73,49 @@ body {
   animation: bell-ring 1s ease-in-out;
 }
 
-/* Fix scanner code-barres */
-#barcode-reader,
-#barcode-reader * {
-  overflow: hidden !important;
-  max-height: 300px !important;
-}
+/* Scanner code-barres - zone de scan visible */
 #barcode-reader {
-  height: 300px !important;
+  min-height: 250px;
+  position: relative;
+  width: 100%;
 }
-#qr-shaded-region {
-  overflow: hidden !important;
+#barcode-reader video {
+  width: 100% !important;
+  max-height: 300px !important;
+  object-fit: cover !important;
+}
+
+/* Barre de navigation bas - compatible tous téléphones (encoche, barre accueil) */
+.nav-bottom {
+  padding-bottom: max(var(--sab), 8px); /* Au moins 8px si pas de safe-area */
+  min-height: calc(56px + max(var(--sab), 8px));
+}
+.nav-bottom-inner {
+  min-height: 56px;
+}
+/* Très petits écrans (320px) : barre nav plus compacte */
+@media (max-width: 360px) {
+  .nav-bottom-inner {
+    min-height: 48px;
+  }
+  .nav-bottom .nav-btn {
+    min-width: 48px !important;
+    min-height: 44px !important;
+  }
+}
+@media (min-width: 768px) {
+  .nav-bottom {
+    padding-bottom: 0;
+    min-height: auto;
+  }
+}
+
+/* Padding bas du contenu pour ne pas être caché par la nav */
+.content-with-nav {
+  padding-bottom: var(--content-bottom-padding) !important;
+}
+
+/* Écrans sans barre nav (profile, settings, etc.) - safe area uniquement */
+.content-no-nav {
+  padding-bottom: max(2rem, calc(1rem + var(--sab))) !important;
 }

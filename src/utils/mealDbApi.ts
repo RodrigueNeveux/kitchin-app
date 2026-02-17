@@ -128,7 +128,6 @@ export async function searchMealDbRecipes(query: string, limit = 15): Promise<Re
     const meals = data.meals.slice(0, limit) as MealDbMeal[];
     return meals.map(mealToRecipe);
   } catch (error) {
-    console.error('TheMealDB search error:', error);
     return [];
   }
 }
@@ -147,7 +146,6 @@ export async function getMealDbByIngredient(ingredient: string, limit = 10): Pro
     }
     return recipes;
   } catch (error) {
-    console.error('TheMealDB filter error:', error);
     return [];
   }
 }
@@ -159,7 +157,6 @@ export async function getMealDbById(id: string): Promise<RecipeFromMealDb | null
     if (!data.meals || !data.meals[0]) return null;
     return mealToRecipe(data.meals[0] as MealDbMeal);
   } catch (error) {
-    console.error('TheMealDB lookup error:', error);
     return null;
   }
 }

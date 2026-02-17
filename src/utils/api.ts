@@ -2,9 +2,6 @@ import { projectId, publicAnonKey } from './supabase/info';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/server`;
 
-console.log('API Base URL configured as:', API_BASE_URL);
-
-// Fonction pour formater les messages d'erreur
 function formatErrorMessage(error: any, endpoint: string): string {
   // Erreurs réseau
   if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('network'))) {
@@ -61,11 +58,8 @@ export class ApiClient {
         },
       });
       const data = await response.json();
-      console.log('Health check response:', data);
       return data;
     } catch (error) {
-      console.error('Health check failed:', error);
-      console.error('Attempted URL:', `${API_BASE_URL}/make-server-e298da7a/health`);
       throw error;
     }
   }
@@ -89,7 +83,6 @@ export class ApiClient {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const fullUrl = `${API_BASE_URL}${endpoint}`;
-        console.log(`Requesting: ${fullUrl}`);
         
         const fetchOptions: RequestInit = {
           ...options,
@@ -108,9 +101,7 @@ export class ApiClient {
           try {
             data = await response.json();
           } catch (jsonError) {
-            // Si le JSON ne peut pas être parsé, créer un message d'erreur
             const text = await response.text();
-            console.error(`Failed to parse JSON response:`, text);
             throw new Error(`Erreur serveur: réponse invalide (${response.status})`);
           }
         } else {
@@ -138,14 +129,6 @@ export class ApiClient {
           } else if (response.status >= 400) {
             errorMessage = `Erreur ${response.status}: ${data.error || 'Requête invalide'}`;
           }
-          
-          console.error(`API error on ${endpoint}:`, {
-            status: response.status,
-            statusText: response.statusText,
-            error: data.error || data.message,
-            data
-          });
-          
           throw new Error(errorMessage);
         }
 
@@ -178,7 +161,6 @@ export class ApiClient {
         }
         
         if (attempt < retries) {
-          console.log(`Retrying ${endpoint} (attempt ${attempt + 1}/${retries})...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
         }
       }
@@ -186,15 +168,7 @@ export class ApiClient {
     
     // Créer un message d'erreur final plus clair
     const errorMessage = formatErrorMessage(lastError, endpoint);
-    const finalError = new Error(errorMessage);
-    
-    console.error(`Network error on ${endpoint} after ${retries + 1} attempts:`, {
-      error: lastError,
-      message: errorMessage,
-      url: `${API_BASE_URL}${endpoint}`
-    });
-    
-    throw finalError;
+    throw new Error(errorMessage);
   }
 
   // Auth
@@ -339,8 +313,7 @@ export async function getProductByBarcode(barcode: string) {
     }
     
     return null;
-  } catch (error) {
-    console.error('Erreur lors de la récupération du produit:', error);
+  } catch {
     return null;
   }
 }
