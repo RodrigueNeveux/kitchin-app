@@ -67,21 +67,14 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
         { facingMode: 'environment' }, // Caméra arrière sur mobile
         {
           fps: 15,
-          qrbox: (w, h) => ({ width: Math.min(280, w * 0.95), height: Math.min(140, h * 0.45) }),
+          qrbox: (w, h) => ({ width: Math.min(320, w * 0.95), height: Math.min(120, h * 0.35) }),
           aspectRatio: 1.0,
         },
         (decodedText) => {
           if (scanHandledRef.current) return;
           scanHandledRef.current = true;
-          html5QrCode.stop().then(() => {
-            scannerRef.current = null;
-            setIsScanning(false);
-            onScan(decodedText);
-            onClose();
-          }).catch(() => {
-            onScan(decodedText);
-            onClose();
-          });
+          onScan(decodedText);
+          onClose();
         },
         (errorMessage) => {
           // Erreur de scan (normale, se produit continuellement jusqu'à ce qu'un code soit détecté)
