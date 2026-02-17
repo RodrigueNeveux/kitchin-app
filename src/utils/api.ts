@@ -277,48 +277,70 @@ export class ApiClient {
 
 export const apiClient = new ApiClient();
 
+// Normalise le code-barres (certains scanners enlèvent le zéro initial des EAN-13)
+function normalizeBarcode(barcode: string): string[] {
+  const digits = barcode.replace(/\D/g, '');
+  if (!digits) return [];
+  const variants: string[] = [digits];
+  // EAN-13 avec zéro initial : le scanner peut retourner 12 chiffres (UPC-A)
+  if (digits.length === 12) {
+    variants.unshift('0' + digits);
+  } else if (digits.length === 13 && digits.startsWith('0')) {
+    variants.push(digits.slice(1)); // Variante sans le zéro initial
+  }
+  return [...new Set(variants)];
+}
+
 // Open Food Facts API - utilise le proxy Supabase (User-Agent correct) ou fallback direct
 export async function getProductByBarcode(barcode: string) {
   try {
+    const variants = normalizeBarcode(barcode);
+    if (variants.length === 0) return null;
+
     const apiBase = `https://${projectId}.supabase.co/functions/v1/server`;
-    const proxyRes = await fetch(`${apiBase}/make-server-e298da7a/product/barcode/${barcode}`, {
-      headers: { Authorization: `Bearer ${publicAnonKey}` },
-    });
-    if (proxyRes.ok) {
-      const { product } = await proxyRes.json();
-      if (product) return product;
-    }
-    const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-    const data = await response.json();
-    if (data.status === 1 && data.product) {
-      const product = data.product;
-      
-      // Déterminer la catégorie basée sur les informations du produit
-      let category: 'fridge' | 'pantry' | 'freezer' = 'pantry';
-      
-      const categories = product.categories_tags || [];
-      const categoryText = categories.join(' ').toLowerCase();
-      
-      if (categoryText.includes('dairy') || categoryText.includes('lait') || 
-          categoryText.includes('yaourt') || categoryText.includes('fromage') ||
-          categoryText.includes('viande') || categoryText.includes('meat') ||
-          categoryText.includes('poisson') || categoryText.includes('fish') ||
-          categoryText.includes('légume') || categoryText.includes('vegetable') ||
-          categoryText.includes('fruit')) {
-        category = 'fridge';
-      } else if (categoryText.includes('surgelé') || categoryText.includes('frozen') ||
-                 categoryText.includes('glace') || categoryText.includes('ice-cream')) {
-        category = 'freezer';
+    for (const normalized of variants) {
+      const proxyRes = await fetch(`${apiBase}/make-server-e298da7a/product/barcode/${normalized}`, {
+        headers: { Authorization: `Bearer ${publicAnonKey}` },
+      });
+      if (proxyRes.ok) {
+        const { product } = await proxyRes.json();
+        if (product) return product;
       }
-      
-      return {
-        name: product.product_name || product.product_name_fr || 'Produit inconnu',
-        brand: product.brands || '',
-        category,
-        image: product.image_url || product.image_front_url || undefined,
-      };
     }
-    
+
+    // Fallback direct (peut échouer sans User-Agent - Open Food Facts l'exige)
+    for (const normalized of variants) {
+      try {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${normalized}.json`);
+        const data = await response.json();
+        if (data.status === 1 && data.product) {
+          const product = data.product;
+          let category: 'fridge' | 'pantry' | 'freezer' = 'pantry';
+          const categories = product.categories_tags || [];
+          const categoryText = categories.join(' ').toLowerCase();
+          if (categoryText.includes('dairy') || categoryText.includes('lait') ||
+              categoryText.includes('yaourt') || categoryText.includes('fromage') ||
+              categoryText.includes('viande') || categoryText.includes('meat') ||
+              categoryText.includes('poisson') || categoryText.includes('fish') ||
+              categoryText.includes('légume') || categoryText.includes('vegetable') ||
+              categoryText.includes('fruit')) {
+            category = 'fridge';
+          } else if (categoryText.includes('surgelé') || categoryText.includes('frozen') ||
+                     categoryText.includes('glace') || categoryText.includes('ice-cream')) {
+            category = 'freezer';
+          }
+          return {
+            name: product.product_name || product.product_name_fr || 'Produit inconnu',
+            brand: product.brands || '',
+            category,
+            image: product.image_url || product.image_front_url || undefined,
+          };
+        }
+      } catch {
+        // Passer à la variante suivante
+      }
+    }
+
     return null;
   } catch {
     return null;
