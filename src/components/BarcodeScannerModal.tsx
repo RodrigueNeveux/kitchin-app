@@ -66,8 +66,8 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
       await html5QrCode.start(
         { facingMode: 'environment' }, // Caméra arrière sur mobile
         {
-          fps: 15,
-          qrbox: (w, h) => ({ width: Math.min(320, w * 0.95), height: Math.min(120, h * 0.35) }),
+          fps: 10, // Moins de fps = images plus nettes (utile bouteilles, reflets)
+          qrbox: (w, h) => ({ width: Math.min(360, w * 0.98), height: Math.min(180, h * 0.5) }), // Zone plus grande pour codes courbes
           aspectRatio: 1.0,
         },
         async (decodedText) => {
@@ -180,6 +180,9 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
                   <p>Positionnez le code-barres dans le cadre</p>
                   <p className="text-xs text-stone-500 mt-1">
                     Le scan se fera automatiquement
+                  </p>
+                  <p className="text-xs text-stone-500 mt-2">
+                    Bouteille : tenez le code face à la caméra, évitez les reflets
                   </p>
                 </div>
               )}
