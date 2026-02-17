@@ -70,10 +70,23 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
           qrbox: (w, h) => ({ width: Math.min(320, w * 0.95), height: Math.min(120, h * 0.35) }),
           aspectRatio: 1.0,
         },
-        (decodedText) => {
+        async (decodedText) => {
           if (scanHandledRef.current) return;
           scanHandledRef.current = true;
           onScan(decodedText);
+          // Arrêter le scanner avant de fermer pour libérer la caméra (évite le blocage au réouverture)
+          const scanner = scannerRef.current;
+          if (scanner) {
+            try {
+              await scanner.stop();
+              scanner.clear();
+            } catch {
+              // Ignorer les erreurs d'arrêt
+            } finally {
+              scannerRef.current = null;
+              setIsScanning(false);
+            }
+          }
           onClose();
         },
         (errorMessage) => {
