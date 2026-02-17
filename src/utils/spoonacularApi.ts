@@ -163,4 +163,3 @@ export function getRemainingQuota(): number {
   if (DEMO_MODE) return 150;
   return 150;
 }
-}
