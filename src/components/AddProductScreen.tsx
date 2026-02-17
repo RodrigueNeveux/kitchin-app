@@ -35,25 +35,16 @@ export function AddProductScreen({ onBack, onSave }: AddProductScreenProps) {
   const [productImage, setProductImage] = useState<string | undefined>(undefined);
 
   const handleBarcodeScanned = async (barcode: string) => {
-    toast.info(`Code-barres scanné: ${barcode}`, {
-      description: 'Recherche des informations du produit...',
-    });
-
     const productInfo = await getProductByBarcode(barcode);
-    
     if (productInfo) {
       setName(productInfo.brand ? `${productInfo.brand} ${productInfo.name}` : productInfo.name);
       setCategory(productInfo.category);
       if (productInfo.image) {
         setProductImage(productInfo.image);
       }
-      toast.success('Produit trouvé !', {
-        description: 'Les informations ont été pré-remplies. Vous pouvez les modifier si nécessaire.',
-      });
+      toast.success('Produit trouvé ! Modifiez si besoin puis cliquez sur « Ajouter ».', { duration: 3000 });
     } else {
-      toast.error('Produit non trouvé', {
-        description: 'Veuillez entrer les informations manuellement.',
-      });
+      toast.error('Produit non trouvé. Entrez le nom manuellement.');
     }
   };
 

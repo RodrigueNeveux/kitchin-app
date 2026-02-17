@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import { BottomNav } from './components/BottomNav';
 import { firebaseApi } from './utils/firebase/api';
@@ -151,23 +151,20 @@ function AppContent() {
     [products]
   );
 
-  // Notification for expiring products - separate effect
+  // Notification for expiring products - une seule fois par chargement
+  const expiringToastShown = useRef(false);
   useEffect(() => {
-    if (isAuthenticated && expiringCount > 0) {
+    if (isAuthenticated && expiringCount > 0 && !expiringToastShown.current) {
+      expiringToastShown.current = true;
       const timer = setTimeout(() => {
         toast.warning(
           `${expiringCount} produit${expiringCount > 1 ? 's' : ''} à consommer rapidement !`,
           {
-            duration: 5000,
-            position: 'top-center',
-            action: {
-              label: 'Voir',
-              onClick: () => setActiveScreen('notifications'),
-            },
+            duration: 2500,
+            action: { label: 'Voir', onClick: () => setActiveScreen('notifications') },
           }
         );
-      }, 1500); // Délai pour laisser l'app se charger
-      
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, expiringCount]);

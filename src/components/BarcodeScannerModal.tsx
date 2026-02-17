@@ -15,10 +15,12 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [manualBarcode, setManualBarcode] = useState('');
   const mountedRef = useRef(false);
+  const scanHandledRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
       mountedRef.current = true;
+      scanHandledRef.current = false;
       // Delay to ensure DOM is ready
       const timer = setTimeout(() => {
         if (mountedRef.current) {
@@ -69,10 +71,17 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
           aspectRatio: 1.0,
         },
         (decodedText) => {
-          // Code-barres scanné avec succès
-          onScan(decodedText);
-          stopScanner();
-          onClose();
+          if (scanHandledRef.current) return;
+          scanHandledRef.current = true;
+          html5QrCode.stop().then(() => {
+            scannerRef.current = null;
+            setIsScanning(false);
+            onScan(decodedText);
+            onClose();
+          }).catch(() => {
+            onScan(decodedText);
+            onClose();
+          });
         },
         (errorMessage) => {
           // Erreur de scan (normale, se produit continuellement jusqu'à ce qu'un code soit détecté)
